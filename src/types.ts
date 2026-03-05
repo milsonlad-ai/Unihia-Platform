@@ -51,7 +51,7 @@ export interface Opportunity {
 
 export interface InspirationItem {
   id: string;
-  type: 'image' | 'video';
+  type: 'image' | 'video' | 'project' | 'startup' | 'prototype' | 'concept' | 'demo';
   mediaUrl: string;
   title: string;
   description: string;
@@ -61,12 +61,14 @@ export interface InspirationItem {
     level: string;
   };
   category: InspirationCategory;
+  createdAt: string;
   interactions: {
     likes: number;
     saves: number;
     comments: number;
   };
   tags: string[];
+  isTrending?: boolean;
 }
 
 export type InspirationCategory = 
@@ -77,7 +79,8 @@ export type InspirationCategory =
   | 'educação' 
   | 'marketing' 
   | 'inteligência artificial' 
-  | 'empreendedorismo';
+  | 'empreendedorismo'
+  | 'engenharia';
 
 export interface UserBehavior {
   likedIds: string[];

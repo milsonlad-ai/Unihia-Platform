@@ -14,13 +14,15 @@ import { motion, AnimatePresence } from 'motion/react';
 import { InspirationItem, InspirationCategory, UserBehavior } from '../types';
 import { InspirationCard } from './InspirationCard';
 import { GoogleGenAI } from "@google/genai";
+import { Toast, ToastType } from './Toast';
 
 const CATEGORIES: InspirationCategory[] = [
-  'tecnologia', 'startups', 'design', 'inovação', 'educação', 'marketing', 'inteligência artificial', 'empreendedorismo'
+  'tecnologia', 'inteligência artificial', 'design', 'startups', 'inovação', 'educação', 'marketing', 'engenharia', 'empreendedorismo'
 ];
 
 const generateMockItems = (count: number, startIndex: number): InspirationItem[] => {
   const categories: InspirationCategory[] = CATEGORIES;
+  const types: InspirationItem['type'][] = ['image', 'video', 'project', 'startup', 'prototype', 'concept', 'demo'];
   const authors = [
     { name: 'Orquestrador #42', avatar: 'https://picsum.photos/seed/user1/100/100', level: 'Nível 4 • Estrategista' },
     { name: 'Visionário Alpha', avatar: 'https://picsum.photos/seed/user2/100/100', level: 'Nível 7 • Inovador' },
@@ -37,14 +39,17 @@ const generateMockItems = (count: number, startIndex: number): InspirationItem[]
     'Design System para Aplicações Espaciais',
     'Inovação em Armazenamento de Energia Térmica',
     'Plataforma de Colaboração para Criadores de Conteúdo',
+    'Sistema de Irrigação Inteligente com IoT',
+    'Marketplace de Créditos de Carbono Tokenizados',
   ];
 
   return Array.from({ length: count }, (_, i) => {
     const id = `insp-${startIndex + i}`;
-    const type = Math.random() > 0.3 ? 'image' : 'video';
+    const type = types[Math.floor(Math.random() * types.length)];
     const category = categories[Math.floor(Math.random() * categories.length)];
     const author = authors[Math.floor(Math.random() * authors.length)];
     const title = titles[Math.floor(Math.random() * titles.length)];
+    const isTrending = Math.random() > 0.8;
     
     // Using picsum for images and a sample video for videos
     const mediaUrl = type === 'video' 
@@ -59,12 +64,14 @@ const generateMockItems = (count: number, startIndex: number): InspirationItem[]
       description: 'Uma visão inovadora que combina tecnologia de ponta com necessidades reais do mercado global. Este projeto visa transformar a maneira como interagimos com o ambiente digital.',
       author,
       category,
+      createdAt: new Date(Date.now() - Math.random() * 1000000000).toISOString(),
       interactions: {
         likes: Math.floor(Math.random() * 500),
         saves: Math.floor(Math.random() * 200),
         comments: Math.floor(Math.random() * 50),
       },
       tags: [category, 'inovação', 'futuro'],
+      isTrending,
     };
   });
 };
@@ -82,8 +89,17 @@ export const InspirationFeed: React.FC = () => {
   });
   const [aiAnalysis, setAiAnalysis] = useState<{ item: InspirationItem; analysis: string } | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: ToastType; isVisible: boolean }>({
+    message: '',
+    type: 'info',
+    isVisible: false
+  });
 
   const loaderRef = useRef<HTMLDivElement>(null);
+
+  const showToast = (message: string, type: ToastType = 'info') => {
+    setToast({ message, type, isVisible: true });
+  };
 
   const loadMore = useCallback(() => {
     if (loading) return;
@@ -118,43 +134,62 @@ export const InspirationFeed: React.FC = () => {
     return () => observer.disconnect();
   }, [loadMore]);
 
-  const handleLike = (id: string) => {
+  const handleLike = (id: string, isLiked: boolean) => {
     setUserBehavior(prev => ({
       ...prev,
       likedIds: prev.likedIds.includes(id) 
         ? prev.likedIds.filter(i => i !== id) 
         : [...prev.likedIds, id]
     }));
+    showToast(isLiked ? 'Inspiração removida dos curtidos' : 'Inspiração curtida!', 'success');
   };
 
-  const handleSave = (id: string) => {
+  const handleSave = (id: string, isSaved: boolean) => {
     setUserBehavior(prev => ({
       ...prev,
       savedIds: prev.savedIds.includes(id) 
         ? prev.savedIds.filter(i => i !== id) 
         : [...prev.savedIds, id]
     }));
+    showToast(isSaved ? 'Inspiração removida da biblioteca' : 'Inspiração salva na biblioteca!', 'success');
   };
 
-  const handleExpandAI = async (item: InspirationItem) => {
+  const handleExpandAI = async (item: InspirationItem, mode: 'expand' | 'execute' = 'expand') => {
     setIsAnalyzing(true);
     setAiAnalysis(null);
     
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      
+      const prompt = mode === 'execute' 
+        ? `Você é o Orquestrador Central da Unihia. Transforme esta inspiração em um PROJETO EXECUTÁVEL: "${item.title}".
+           Descrição: "${item.description}".
+           Categoria: "${item.category}".
+           
+           Gere um Roadmap Estratégico detalhado contendo:
+           1. PLANO ESTRATÉGICO: Visão de curto e longo prazo.
+           2. ROADMAP: Fases de desenvolvimento (Mês 1 a 6).
+           3. FERRAMENTAS NECESSÁRIAS: Stack tecnológica e recursos.
+           4. CRONOGRAMA: Marcos principais.
+           5. ESTIMATIVA FINANCEIRA: Investimento inicial e projeção.
+           6. COLABORADORES SUGERIDOS: Perfis necessários (ex: Designer UI/UX, Dev Fullstack).
+           
+           Responda em formato Markdown profissional e motivador.`
+        : `Analise esta inspiração criativa: "${item.title}". 
+           Descrição: "${item.description}". 
+           Categoria: "${item.category}".
+           
+           Crie um plano de expansão estratégica que inclua:
+           1. Modelo de Negócio sugerido.
+           2. Principais desafios tecnológicos.
+           3. Sugestão de MVP (Produto Mínimo Viável).
+           4. Potencial de escala global.
+           
+           Responda em formato Markdown curto e direto.`;
+
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: `Analise esta inspiração criativa: "${item.title}". 
-        Descrição: "${item.description}". 
-        Categoria: "${item.category}".
-        
-        Crie um plano de expansão estratégica que inclua:
-        1. Modelo de Negócio sugerido.
-        2. Principais desafios tecnológicos.
-        3. Sugestão de MVP (Produto Mínimo Viável).
-        4. Potencial de escala global.
-        
-        Responda em formato Markdown curto e direto.`,
+        contents: prompt,
       });
       
       setAiAnalysis({ item, analysis: response.text || 'Não foi possível gerar a análise.' });
@@ -211,6 +246,32 @@ export const InspirationFeed: React.FC = () => {
         ))}
       </div>
 
+      {/* Trending Section */}
+      {activeCategory === 'all' && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="text-emerald-500" size={16} />
+            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400">Tendências Globais</h3>
+          </div>
+          <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide -mx-6 px-6">
+            {items.filter(i => i.isTrending).slice(0, 5).map(item => (
+              <motion.div 
+                key={`trend-${item.id}`}
+                whileHover={{ scale: 1.02 }}
+                className="min-w-[280px] aspect-video rounded-3xl overflow-hidden relative border border-white/10 group cursor-pointer"
+                onClick={() => handleExpandAI(item)}
+              >
+                <img src={item.mediaUrl} alt={item.title} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent p-5 flex flex-col justify-end">
+                  <p className="text-[8px] text-unihia-accent font-black uppercase tracking-widest mb-1">{item.category}</p>
+                  <h4 className="text-sm font-bold text-white line-clamp-1">{item.title}</h4>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Feed Grid */}
       <div className="space-y-6">
         {filteredItems.map((item) => (
@@ -223,13 +284,17 @@ export const InspirationFeed: React.FC = () => {
             <InspirationCard 
               item={item}
               onLike={(id) => {
-                handleLike(id);
+                const isLiked = userBehavior.likedIds.includes(id);
+                handleLike(id, isLiked);
                 setUserBehavior(prev => ({
                   ...prev,
                   visitedCategories: [...prev.visitedCategories, item.category]
                 }));
               }}
-              onSave={handleSave}
+              onSave={(id) => {
+                const isSaved = userBehavior.savedIds.includes(id);
+                handleSave(id, isSaved);
+              }}
               onTransform={() => {}}
               onExpandAI={handleExpandAI}
               isLiked={userBehavior.likedIds.includes(item.id)}
@@ -305,7 +370,7 @@ export const InspirationFeed: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <button 
                     onClick={() => {
-                      alert('Projeto criado com sucesso no Laboratório!');
+                      showToast('Projeto criado com sucesso no Laboratório!', 'success');
                       setAiAnalysis(null);
                     }}
                     className="bg-unihia-accent text-black font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest active:scale-95 transition-all"
@@ -314,7 +379,7 @@ export const InspirationFeed: React.FC = () => {
                   </button>
                   <button 
                     onClick={() => {
-                      alert('Ideia salva na sua biblioteca privada.');
+                      showToast('Ideia salva na sua biblioteca privada.', 'success');
                       setAiAnalysis(null);
                     }}
                     className="bg-white/5 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest border border-white/10 active:scale-95 transition-all"
@@ -323,7 +388,7 @@ export const InspirationFeed: React.FC = () => {
                   </button>
                   <button 
                     onClick={() => {
-                      alert('Pitch enviado para a rede de investidores Unihia.');
+                      showToast('Pitch enviado para a rede de investidores Unihia.', 'success');
                       setAiAnalysis(null);
                     }}
                     className="col-span-2 bg-emerald-500/10 text-emerald-500 font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest border border-emerald-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
@@ -332,7 +397,7 @@ export const InspirationFeed: React.FC = () => {
                   </button>
                   <button 
                     onClick={() => {
-                      alert('Iniciando processo de incubação para Startup.');
+                      showToast('Iniciando processo de incubação para Startup.', 'info');
                       setAiAnalysis(null);
                     }}
                     className="col-span-2 bg-blue-500/10 text-blue-500 font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest border border-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
@@ -345,6 +410,13 @@ export const InspirationFeed: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <Toast 
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={() => setToast(prev => ({ ...prev, isVisible: false }))}
+      />
     </div>
   );
 };

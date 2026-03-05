@@ -8,7 +8,9 @@ import {
   MoreHorizontal,
   ChevronRight,
   Loader2,
-  Sparkles
+  Sparkles,
+  TrendingUp,
+  Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { InspirationItem } from '../types';
@@ -18,7 +20,7 @@ interface InspirationCardProps {
   onLike: (id: string) => void;
   onSave: (id: string) => void;
   onTransform: (id: string) => void;
-  onExpandAI: (item: InspirationItem) => void;
+  onExpandAI: (item: InspirationItem, mode?: 'expand' | 'execute') => void;
   isLiked: boolean;
   isSaved: boolean;
 }
@@ -83,22 +85,39 @@ export const InspirationCard: React.FC<InspirationCardProps> = ({
         )}
         
         {/* Category Badge */}
-        <div className="absolute top-4 left-4 z-10">
+        <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
           <span className="px-3 py-1.5 bg-black/60 backdrop-blur-md text-[9px] uppercase tracking-widest text-unihia-accent font-black rounded-full border border-unihia-accent/30">
             {item.category}
+          </span>
+          {item.isTrending && (
+            <span className="px-3 py-1.5 bg-emerald-500/80 backdrop-blur-md text-[9px] uppercase tracking-widest text-white font-black rounded-full border border-emerald-400/30 flex items-center gap-1.5">
+              <TrendingUp size={10} /> Tendência
+            </span>
+          )}
+        </div>
+
+        {/* Type Badge */}
+        <div className="absolute top-4 right-4 z-10">
+          <span className="px-2 py-1 bg-white/10 backdrop-blur-md text-[7px] uppercase tracking-widest text-white font-black rounded-md border border-white/10">
+            {item.type}
           </span>
         </div>
 
         {/* Overlay Info (Bottom) */}
-        <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/90 via-black/40 to-transparent">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-full bg-zinc-800 border border-white/10 overflow-hidden">
-              <img src={item.author.avatar} alt={item.author.name} className="w-full h-full object-cover" />
+        <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/95 via-black/60 to-transparent">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-zinc-800 border border-white/10 overflow-hidden">
+                <img src={item.author.avatar} alt={item.author.name} className="w-full h-full object-cover" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-white">{item.author.name}</p>
+                <p className="text-[8px] text-zinc-400 uppercase tracking-widest font-black">{item.author.level}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-bold text-white">{item.author.name}</p>
-              <p className="text-[8px] text-zinc-400 uppercase tracking-widest font-black">{item.author.level}</p>
-            </div>
+            <p className="text-[8px] text-zinc-500 font-black uppercase tracking-widest">
+              {new Date(item.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+            </p>
           </div>
           <h3 className="text-xl font-bold text-white mb-2 leading-tight tracking-tight">{item.title}</h3>
           <p className="text-zinc-300 text-xs line-clamp-2 font-medium leading-relaxed">{item.description}</p>
@@ -106,43 +125,53 @@ export const InspirationCard: React.FC<InspirationCardProps> = ({
       </div>
 
       {/* Interaction Bar */}
-      <div className="p-5 flex items-center justify-between border-t border-white/[0.04]">
-        <div className="flex items-center gap-5">
-          <button 
-            onClick={() => onLike(item.id)}
-            className={`flex flex-col items-center gap-1 transition-all ${isLiked ? 'text-red-500' : 'text-zinc-500 hover:text-white'}`}
-          >
-            <Heart size={20} fill={isLiked ? "currentColor" : "none"} />
-            <span className="text-[8px] font-black">{item.interactions.likes + (isLiked ? 1 : 0)}</span>
-          </button>
-          
-          <button 
-            onClick={() => onSave(item.id)}
-            className={`flex flex-col items-center gap-1 transition-all ${isSaved ? 'text-unihia-accent' : 'text-zinc-500 hover:text-white'}`}
-          >
-            <Lightbulb size={20} fill={isSaved ? "currentColor" : "none"} />
-            <span className="text-[8px] font-black">Transformar</span>
-          </button>
+      <div className="p-5 flex flex-col gap-4 border-t border-white/[0.04]">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-5">
+            <button 
+              onClick={() => onLike(item.id)}
+              className={`flex flex-col items-center gap-1 transition-all ${isLiked ? 'text-red-500' : 'text-zinc-500 hover:text-white'}`}
+            >
+              <Heart size={20} fill={isLiked ? "currentColor" : "none"} />
+              <span className="text-[8px] font-black">{item.interactions.likes + (isLiked ? 1 : 0)}</span>
+            </button>
+            
+            <button 
+              onClick={() => onSave(item.id)}
+              className={`flex flex-col items-center gap-1 transition-all ${isSaved ? 'text-unihia-accent' : 'text-zinc-500 hover:text-white'}`}
+            >
+              <Lightbulb size={20} fill={isSaved ? "currentColor" : "none"} />
+              <span className="text-[8px] font-black">Salvar</span>
+            </button>
 
-          <button className="flex flex-col items-center gap-1 text-zinc-500 hover:text-white transition-all">
-            <MessageSquare size={20} />
-            <span className="text-[8px] font-black">{item.interactions.comments}</span>
-          </button>
+            <button className="flex flex-col items-center gap-1 text-zinc-500 hover:text-white transition-all">
+              <MessageSquare size={20} />
+              <span className="text-[8px] font-black">{item.interactions.comments}</span>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => onExpandAI(item, 'expand')}
+              className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white hover:bg-white/10 transition-all group/ai"
+            >
+              <Bot size={16} className="group-hover/ai:animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Analisar</span>
+            </button>
+            
+            <button className="p-2 text-zinc-500 hover:text-white transition-all">
+              <Share2 size={18} />
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => onExpandAI(item)}
-            className="flex items-center gap-2 px-4 py-2 bg-unihia-accent/10 border border-unihia-accent/20 rounded-xl text-unihia-accent hover:bg-unihia-accent hover:text-black transition-all group/ai"
-          >
-            <Bot size={16} className="group-hover/ai:animate-pulse" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Expandir</span>
-          </button>
-          
-          <button className="p-2 text-zinc-500 hover:text-white transition-all">
-            <Share2 size={18} />
-          </button>
-        </div>
+        <button 
+          onClick={() => onExpandAI(item, 'execute')}
+          className="w-full py-3.5 bg-unihia-accent text-black font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-unihia-accent/20"
+        >
+          <Zap size={14} fill="currentColor" />
+          Transformar em Projeto Executável
+        </button>
       </div>
     </motion.div>
   );
