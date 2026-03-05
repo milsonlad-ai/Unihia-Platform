@@ -7,23 +7,64 @@
   --font-serif: "Playfair Display", serif;
   
   --color-unihia-gold: #D4AF37;
-  --color-unihia-dark: #0A0A0A;
-  --color-unihia-card: #141414;
-  --color-unihia-accent: var(--unihia-accent, #F27D26);
+  --color-unihia-dark: #000000;
+  --color-unihia-surface: #050505;
+  --color-unihia-card: #0A0A0A;
+  --color-unihia-accent: #F27D26;
+  --color-unihia-accent-glow: rgba(242, 125, 38, 0.25);
+  --color-unihia-border: rgba(255, 255, 255, 0.08);
 }
 
 @layer base {
   body {
-    @apply bg-unihia-dark text-white font-sans antialiased;
+    @apply bg-unihia-dark text-white font-sans antialiased overflow-x-hidden selection:bg-unihia-accent selection:text-black;
+    background-image: 
+      radial-gradient(circle at 50% -20%, rgba(242, 125, 38, 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 0% 100%, rgba(242, 125, 38, 0.03) 0%, transparent 40%);
+    background-attachment: fixed;
+  }
+  
+  h1, h2, h3, h4 {
+    @apply tracking-tight;
   }
 }
 
 .glass-card {
-  @apply bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl;
+  @apply bg-white/[0.02] backdrop-blur-2xl border border-white/[0.06] rounded-3xl transition-all duration-500;
+  box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.2);
 }
 
-.gradient-text {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-unihia-accent to-unihia-gold;
+.glass-card:hover {
+  @apply bg-white/[0.04] border-white/[0.12];
+  box-shadow: 0 8px 32px -1px rgba(0, 0, 0, 0.4);
+}
+
+.glass-nav {
+  @apply bg-black/60 backdrop-blur-3xl border-t border-white/[0.04];
+}
+
+.glass-header {
+  @apply bg-black/40 backdrop-blur-2xl border-b border-white/[0.04];
+}
+
+.immersive-gradient {
+  background: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.4) 60%, transparent 100%);
+}
+
+.accent-glow {
+  box-shadow: 0 0 30px var(--color-unihia-accent-glow);
+}
+
+.text-glow {
+  text-shadow: 0 0 15px var(--color-unihia-accent-glow);
+}
+
+.text-secondary {
+  @apply text-zinc-400;
+}
+
+.text-muted {
+  @apply text-zinc-600;
 }
 
 .unihia-scrollbar::-webkit-scrollbar {
@@ -36,5 +77,16 @@
 
 .unihia-scrollbar::-webkit-scrollbar-thumb {
   @apply bg-white/10 rounded-full;
+}
+
+/* Custom Animations */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
 }
 

@@ -1,1038 +1,411 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Radar, 
-  Lightbulb, 
-  Rocket, 
-  ShoppingBag, 
+  FlaskConical, 
   Users, 
-  MessageSquare, 
-  User as UserIcon, 
-  TrendingUp, 
-  Search,
-  Plus,
-  Zap,
+  ShoppingBag, 
+  Zap, 
+  Search, 
+  Bell, 
+  Menu,
+  TrendingUp,
+  MessageSquare,
+  Share2,
+  Bookmark,
   ChevronRight,
   Sparkles,
-  ArrowUpRight,
-  Globe,
-  Briefcase
+  Brain,
+  Cpu
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { GoogleGenAI } from "@google/genai";
-import { User, Project, Opportunity, AppSettings, SavedItem } from './types';
-import { TRANSLATIONS } from './constants';
 
-// Mock Accounts
-const MOCK_ACCOUNTS: User[] = [
-  {
-    id: 'user_1',
-    name: 'Alex Rivera',
-    email: 'alex@unihia.com',
-    bio: 'Serial Entrepreneur & AI Architect. Building the future of human-AI collaboration.',
-    skills: ['AI', 'Product Design', 'Venture Capital'],
-    reputation: 980,
-    avatar: 'https://picsum.photos/seed/alex/200/200'
-  },
-  {
-    id: 'user_2',
-    name: 'Sarah Chen',
-    email: 'sarah@unihia.com',
-    bio: 'Venture Partner & Growth Strategist.',
-    skills: ['Growth', 'Strategy', 'Finance'],
-    reputation: 1250,
-    avatar: 'https://picsum.photos/seed/sarah/200/200'
-  }
-];
+// --- Types ---
+type Tab = 'radar' | 'lab' | 'comunidade' | 'mercado';
 
-const DEFAULT_SETTINGS: AppSettings = {
-  language: 'English',
-  theme: 'dark',
-  accentColor: '#F27D26',
-  fontFamily: 'sans',
-  feedLayout: 'grid',
-  aiInterventionLevel: 50
-};
+// --- Components ---
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const Header = () => (
+  <header className="fixed top-0 left-0 right-0 h-16 glass-header z-40 flex items-center justify-center px-6">
+    <div className="w-full max-w-md flex items-center justify-between">
+      <div className="flex items-center gap-3 group cursor-pointer">
+        <div className="w-9 h-9 bg-unihia-accent rounded-xl flex items-center justify-center accent-glow transition-transform group-hover:scale-105">
+          <Zap className="text-black w-5 h-5 fill-current" />
+        </div>
+        <span className="text-white font-bold tracking-tighter text-xl group-hover:text-unihia-accent transition-colors">UNIHIA</span>
+      </div>
+      <div className="flex items-center gap-1">
+        <button className="p-2.5 text-zinc-500 hover:text-unihia-accent transition-all hover:bg-white/5 rounded-full">
+          <Search size={18} />
+        </button>
+        <button className="p-2.5 text-zinc-500 hover:text-unihia-accent transition-all hover:bg-white/5 rounded-full relative">
+          <Bell size={18} />
+          <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-unihia-accent rounded-full border border-black" />
+        </button>
+        <button className="p-2.5 text-zinc-500 hover:text-unihia-accent transition-all hover:bg-white/5 rounded-full">
+          <Menu size={18} />
+        </button>
+      </div>
+    </div>
+  </header>
+);
 
-export default function App() {
-  const [activeTab, setActiveTab] = useState('radar');
-  const [accounts, setAccounts] = useState<User[]>(MOCK_ACCOUNTS);
-  const [currentAccountIdx, setCurrentAccountIdx] = useState(0);
-  const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
-  const [savedItems, setSavedItems] = useState<SavedItem[]>([]);
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  const user = accounts[currentAccountIdx];
-
-  const t = (key: string) => {
-    const lang = settings.language === 'Portuguese' ? 'Portuguese' : 'English';
-    return TRANSLATIONS[lang][key] || key;
-  };
-
-  const tabs = [
-    { id: 'radar', label: t('radar'), icon: Radar },
-    { id: 'inspiration', label: t('inspiration'), icon: Sparkles },
-    { id: 'creation', label: t('creation'), icon: Lightbulb },
-    { id: 'marketplace', label: t('marketplace'), icon: ShoppingBag },
-    { id: 'community', label: t('community'), icon: Users },
-    { id: 'investors', label: t('investors'), icon: TrendingUp },
-    { id: 'chat', label: t('chat'), icon: MessageSquare },
-    { id: 'saved', label: t('saved'), icon: ShoppingBag }, // Reusing icon for now
-    { id: 'profile', label: t('profile'), icon: UserIcon },
-    { id: 'settings', label: t('settings'), icon: Zap }, // Reusing icon for now
+const RadarScreen = () => {
+  const opportunities = [
+    { id: 1, title: 'Expansão de Mercado: Angola', category: 'Negócios', match: '98%', time: '2h atrás', trend: '+12%', color: 'bg-blue-500' },
+    { id: 2, title: 'Novo Algoritmo de IA Preditiva', category: 'Tecnologia', match: '92%', time: '5h atrás', trend: '+8%', color: 'bg-unihia-accent' },
+    { id: 3, title: 'Parceria Estratégica: Fintech BR', category: 'Finanças', match: '85%', time: '1d atrás', trend: '+5%', color: 'bg-emerald-500' },
   ];
 
-  const switchAccount = () => {
-    setCurrentAccountIdx((prev) => (prev + 1) % accounts.length);
-  };
-
-  const getThemeClass = () => {
-    if (settings.theme === 'gradient') return 'bg-gradient-to-br from-unihia-dark via-[#1a1a1a] to-unihia-accent/10';
-    if (settings.theme === 'light') return 'bg-white text-black';
-    return 'bg-unihia-dark text-white';
-  };
-
   return (
-    <div 
-      className={`flex h-screen overflow-hidden transition-colors duration-500 ${getThemeClass()} font-${settings.fontFamily}`}
-      style={{ '--unihia-accent': settings.accentColor } as any}
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="p-6 pt-24 pb-32 space-y-10"
     >
-      {/* Sidebar Navigation */}
-      <nav className="w-20 md:w-64 border-r border-white/5 flex flex-col items-center md:items-start py-8 px-4 gap-8">
-        <div className="flex items-center gap-3 px-2">
-          <div 
-            className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg shadow-unihia-accent/20 cursor-pointer"
-            style={{ backgroundColor: settings.accentColor }}
-          >
-            <Zap className="text-white fill-current" size={24} />
-          </div>
-          <span className="hidden md:block font-serif text-2xl font-bold tracking-tight">UNIHIA</span>
+      <div className="flex items-end justify-between">
+        <div className="space-y-1.5">
+          <h2 className="text-4xl font-serif italic font-bold text-white leading-none">Radar</h2>
+          <p className="text-zinc-500 text-[10px] uppercase tracking-[0.2em] font-bold">Oportunidades em Tempo Real</p>
         </div>
-
-        <div className="flex-1 w-full flex flex-col gap-2 overflow-y-auto unihia-scrollbar">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-4 p-3 rounded-xl transition-all duration-200 group ${
-                activeTab === tab.id 
-                  ? 'bg-white/10 text-white' 
-                  : 'text-white/40 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <tab.icon 
-                size={22} 
-                className={activeTab === tab.id ? '' : 'group-hover:opacity-100'} 
-                style={{ color: activeTab === tab.id ? settings.accentColor : undefined }}
-              />
-              <span className="hidden md:block font-medium">{tab.label}</span>
-            </button>
-          ))}
+        <div className="p-2.5 bg-unihia-accent/10 rounded-2xl border border-unihia-accent/20">
+          <TrendingUp className="text-unihia-accent" size={18} />
         </div>
-
-        <div className="w-full pt-8 border-t border-white/5 space-y-4">
-          <div className="flex items-center gap-3 px-2 cursor-pointer group" onClick={switchAccount}>
-            <div className="relative">
-              <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full border border-white/10" referrerPolicy="no-referrer" />
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-unihia-dark rounded-full" />
-            </div>
-            <div className="hidden md:block flex-1">
-              <p className="text-sm font-semibold truncate">{user.name}</p>
-              <p className="text-xs text-white/40">{t('switchAccount')}</p>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto unihia-scrollbar">
-        <header className="sticky top-0 z-10 bg-inherit/80 backdrop-blur-xl border-bottom border-white/5 px-8 py-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-serif font-bold capitalize">{t(activeTab)}</h1>
-            <p className="text-sm text-white/40">{t('welcomeBack')}, {user.name.split(' ')[0]}. {t('language')}: {settings.language}</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="relative hidden lg:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" size={18} />
-              <input 
-                type="text" 
-                placeholder={t('searchEverything')} 
-                className="bg-white/5 border border-white/10 rounded-full py-2 pl-10 pr-4 w-64 focus:outline-none focus:border-unihia-accent/50 transition-colors"
-              />
-            </div>
-            <button 
-              className="text-white px-4 py-2 rounded-full flex items-center gap-2 font-medium transition-all shadow-lg"
-              style={{ backgroundColor: settings.accentColor }}
-            >
-              <Plus size={18} />
-              <span className="hidden sm:inline">{t('newProject')}</span>
-            </button>
-          </div>
-        </header>
-
-        <div className="p-8">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-            >
-              {activeTab === 'radar' && <RadarFeed user={user} settings={settings} />}
-              {activeTab === 'inspiration' && <InspirationFeed settings={settings} onSave={(item) => setSavedItems(prev => [...prev, item])} />}
-              {activeTab === 'creation' && <CreationLab settings={settings} />}
-              {activeTab === 'marketplace' && <Marketplace settings={settings} />}
-              {activeTab === 'community' && <Community settings={settings} />}
-              {activeTab === 'investors' && <Investors settings={settings} />}
-              {activeTab === 'chat' && <Chat settings={settings} />}
-              {activeTab === 'saved' && <SavedLibrary settings={settings} items={savedItems} />}
-              {activeTab === 'profile' && <Profile settings={settings} user={user} />}
-              {activeTab === 'settings' && <SettingsHub settings={settings} setSettings={setSettings} />}
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      </main>
-    </div>
-  );
-}
-
-// --- Sub-Components ---
-
-function RadarFeed({ user, settings }: { user: User, settings: AppSettings }) {
-  const [opps, setOpps] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const t = (key: string) => {
-    const lang = settings.language === 'Portuguese' ? 'Portuguese' : 'English';
-    return TRANSLATIONS[lang][key] || key;
-  };
-
-  useEffect(() => {
-    const generateOpps = async () => {
-      try {
-        const response = await ai.models.generateContent({
-          model: "gemini-3-flash-preview",
-          contents: `Generate 4 highly personalized business/investment opportunities for a user with these skills: ${user.skills.join(', ')}. 
-          The user prefers ${settings.language} and has an AI intervention level of ${settings.aiInterventionLevel}%.
-          IMPORTANT: All text fields (title, description, action_label) MUST be in ${settings.language}.
-          Format as JSON array of objects: { id, type, title, description, match_score, action_label }.
-          Types: 'investor', 'team', 'market', 'project'.`,
-          config: { responseMimeType: "application/json" }
-        });
-        const data = JSON.parse(response.text || '[]');
-        setOpps(data);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    generateOpps();
-  }, [user.id, settings.language]);
-
-  if (loading) return <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-pulse">
-    {[1,2,3,4].map(i => <div key={i} className="h-48 glass-card" />)}
-  </div>;
-
-  return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold flex items-center gap-2">
-          <Sparkles className="text-unihia-accent" size={20} />
-          {t('aiOpportunities')}
-        </h2>
-        <span className="text-xs text-white/40 uppercase tracking-widest">{t('livePulse')}</span>
       </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {opps.map((opp) => (
+      
+      <div className="space-y-6">
+        {opportunities.map((opp) => (
           <motion.div 
-            key={opp.id}
-            whileHover={{ scale: 1.01 }}
-            className="glass-card p-6 flex flex-col justify-between group cursor-pointer"
+            key={opp.id} 
+            whileHover={{ y: -4 }}
+            className="glass-card p-6 group cursor-pointer relative overflow-hidden"
           >
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                  opp.type === 'investor' ? 'bg-emerald-500/20 text-emerald-400' :
-                  opp.type === 'team' ? 'bg-blue-500/20 text-blue-400' :
-                  'bg-unihia-accent/20 text-unihia-accent'
-                }`}>
-                  {t(opp.type.toLowerCase())}
+            <div className="absolute top-0 left-0 w-1 h-full bg-unihia-accent/20 group-hover:bg-unihia-accent transition-colors" />
+            
+            <div className="flex justify-between items-center mb-5">
+              <div className="flex items-center gap-2.5">
+                <span className="px-2.5 py-1 bg-white/[0.03] text-[9px] uppercase tracking-widest text-zinc-400 font-bold rounded-lg border border-white/[0.05]">
+                  {opp.category}
                 </span>
-                <span className="text-xs font-mono text-white/40">{opp.match_score}% {t('match')}</span>
+                <span className="text-[10px] text-emerald-400 font-mono font-bold flex items-center gap-1">
+                  <TrendingUp size={10} /> {opp.trend}
+                </span>
               </div>
-              <h3 className="text-xl font-bold mb-2 group-hover:text-unihia-accent transition-colors">{opp.title}</h3>
-              <p className="text-white/60 text-sm leading-relaxed mb-6">{opp.description}</p>
+              <span className="text-[10px] text-zinc-600 font-medium">{opp.time}</span>
             </div>
-            <div className="flex items-center gap-3">
-              <button className="flex-1 bg-white text-black font-bold py-2 rounded-lg text-sm hover:bg-white/90 transition-all">
-                {opp.action_label}
-              </button>
-              <button className="p-2 border border-white/10 rounded-lg hover:bg-white/5 transition-all">
-                <ChevronRight size={20} />
+            
+            <h3 className="text-xl font-medium text-white mb-6 group-hover:text-unihia-accent transition-colors leading-tight tracking-tight">
+              {opp.title}
+            </h3>
+            
+            <div className="flex items-center justify-between pt-5 border-t border-white/[0.04]">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-1 bg-white/5 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: opp.match }}
+                    transition={{ duration: 1.5, ease: "easeOut" }}
+                    className={`h-full ${opp.color} opacity-80`} 
+                  />
+                </div>
+                <span className="text-[10px] font-mono font-bold text-zinc-400 group-hover:text-unihia-accent transition-colors">{opp.match} Match</span>
+              </div>
+              <button className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-zinc-500 group-hover:text-white transition-colors">
+                Analisar <ChevronRight size={14} />
               </button>
             </div>
           </motion.div>
         ))}
       </div>
-    </div>
+    </motion.div>
   );
-}
+};
 
-function InspirationFeed({ settings, onSave }: { settings: AppSettings, onSave: (item: SavedItem) => void }) {
-  const [pins, setPins] = useState([
-    { id: 1, title: 'Neural Interface Design', img: 'https://picsum.photos/seed/neural/400/600', tags: ['AI', 'UX'], originalTitle: 'Neural Interface Design' },
-    { id: 2, title: 'Sustainable Smart Cities', img: 'https://picsum.photos/seed/city/400/400', tags: ['Green', 'IoT'], originalTitle: 'Sustainable Smart Cities' },
-    { id: 3, title: 'Quantum Computing SDK', img: 'https://picsum.photos/seed/quantum/400/500', tags: ['Dev', 'Future'], originalTitle: 'Quantum Computing SDK' },
-    { id: 4, title: 'Vertical Farming Automation', img: 'https://picsum.photos/seed/farm/400/700', tags: ['Agri', 'Robotics'], originalTitle: 'Vertical Farming Automation' },
-    { id: 5, title: 'Decentralized Identity', img: 'https://picsum.photos/seed/id/400/450', tags: ['Web3', 'Security'], originalTitle: 'Decentralized Identity' },
-    { id: 6, title: 'Space Tourism Logistics', img: 'https://picsum.photos/seed/space/400/550', tags: ['Space', 'Ops'], originalTitle: 'Space Tourism Logistics' },
-  ]);
-
-  const [activeMenu, setActiveMenu] = useState<number | null>(null);
-
-  const t = (key: string) => {
-    const lang = settings.language === 'Portuguese' ? 'Portuguese' : 'English';
-    return TRANSLATIONS[lang][key] || key;
-  };
-
-  const translatePin = async (id: number) => {
-    const pin = pins.find(p => p.id === id);
-    if (!pin) return;
-    
-    try {
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: `Translate the following title to ${settings.language}: "${pin.originalTitle}"`,
-      });
-      const translated = response.text?.trim() || pin.title;
-      setPins(prev => prev.map(p => p.id === id ? { ...p, title: translated } : p));
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleSave = (pin: any) => {
-    onSave({
-      id: `pin_${pin.id}_${Date.now()}`,
-      type: 'pin',
-      title: pin.title,
-      content: pin,
-      category: pin.tags[0],
-      savedAt: new Date().toISOString()
-    });
-    setActiveMenu(null);
-  };
+const LabScreen = () => {
+  const tools = [
+    { name: 'Gemini Vision', desc: 'Análise multimodal de ativos', icon: Sparkles, status: 'Online', color: 'text-blue-400' },
+    { name: 'Neural Predictor', desc: 'Previsão de tendências globais', icon: Brain, status: 'Online', color: 'text-emerald-400' },
+    { name: 'Auto-Executor', desc: 'Automação de fluxos de trabalho', icon: Cpu, status: 'Beta', color: 'text-unihia-accent' },
+  ];
 
   return (
-    <div className={`gap-6 space-y-6 ${
-      settings.feedLayout === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : 
-      settings.feedLayout === 'list' ? 'flex flex-col max-w-2xl mx-auto' : 
-      'columns-1 sm:columns-2 lg:columns-3'
-    }`}>
-      {pins.map((pin) => (
-        <motion.div 
-          key={pin.id}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="relative group rounded-2xl overflow-hidden cursor-pointer glass-card"
-        >
-          <img src={pin.img} alt={pin.title} className="w-full object-cover transition-transform duration-500 group-hover:scale-105" referrerPolicy="no-referrer" />
-          
-          {/* Quick Tools Menu */}
-          <div className="absolute top-4 right-4 z-20">
-            <button 
-              onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === pin.id ? null : pin.id); }}
-              className="p-2 bg-black/60 backdrop-blur-md rounded-full text-white hover:bg-unihia-accent transition-colors"
-            >
-              <Zap size={16} />
-            </button>
-            
-            <AnimatePresence>
-              {activeMenu === pin.id && (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.9, x: 10 }}
-                  animate={{ opacity: 1, scale: 1, x: 0 }}
-                  exit={{ opacity: 0, scale: 0.9, x: 10 }}
-                  className="absolute top-10 right-0 w-48 bg-unihia-card border border-white/10 rounded-xl shadow-2xl p-2 space-y-1"
-                >
-                  <button onClick={() => translatePin(pin.id)} className="w-full text-left px-3 py-2 text-xs hover:bg-white/5 rounded-lg flex items-center gap-2">
-                    <Globe size={14} /> {t('translateTo')} {settings.language}
-                  </button>
-                  <button onClick={() => handleSave(pin)} className="w-full text-left px-3 py-2 text-xs hover:bg-white/5 rounded-lg flex items-center gap-2">
-                    <ShoppingBag size={14} /> {t('saveToLibrary')}
-                  </button>
-                  <button className="w-full text-left px-3 py-2 text-xs hover:bg-white/5 rounded-lg flex items-center gap-2 text-unihia-accent">
-                    <Rocket size={14} /> {t('executeProject')}
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="p-6 pt-24 pb-32 space-y-12"
+    >
+      <div className="text-center space-y-4">
+        <h2 className="text-5xl font-bold text-white tracking-tighter leading-none">Laboratório</h2>
+        <p className="text-zinc-500 text-sm max-w-[260px] mx-auto leading-relaxed">Orquestração de inteligência aplicada para resultados exponenciais.</p>
+      </div>
 
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
-            <h3 className="text-lg font-bold mb-2">{pin.title}</h3>
-            <div className="flex gap-2 mb-4">
-              {pin.tags.map(t => <span key={t} className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full">{t}</span>)}
+      <div className="grid grid-cols-1 gap-6">
+        {tools.map((tool) => (
+          <motion.div 
+            key={tool.name} 
+            whileHover={{ scale: 1.02 }}
+            className="glass-card p-7 flex items-center gap-7 group relative overflow-hidden"
+          >
+            <div className="w-16 h-16 bg-white/[0.02] rounded-2xl flex items-center justify-center border border-white/[0.05] group-hover:border-unihia-accent/30 transition-all duration-500">
+              <tool.icon className={`${tool.color} group-hover:scale-110 transition-transform duration-500`} size={32} />
             </div>
-            <button className="w-full bg-unihia-accent text-white font-bold py-2 rounded-lg text-sm flex items-center justify-center gap-2">
-              <Rocket size={16} />
-              {t('executeIdea')}
+            <div className="flex-1">
+              <div className="flex items-center gap-2.5 mb-1.5">
+                <h3 className="text-white font-bold text-lg tracking-tight">{tool.name}</h3>
+                <span className={`text-[7px] uppercase tracking-[0.2em] px-2 py-0.5 rounded-full font-black ${tool.status === 'Online' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-unihia-accent/10 text-unihia-accent border border-unihia-accent/20'}`}>
+                  {tool.status}
+                </span>
+              </div>
+              <p className="text-zinc-500 text-xs leading-relaxed font-medium">{tool.desc}</p>
+            </div>
+            <ChevronRight className="text-zinc-800 group-hover:text-unihia-accent transition-colors" size={20} />
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  );
+};
+
+const CommunityScreen = () => (
+  <motion.div 
+    initial={{ opacity: 0, x: 20 }}
+    animate={{ opacity: 1, x: 0 }}
+    className="p-6 pt-24 pb-32 space-y-10"
+  >
+    <div className="flex items-end justify-between">
+      <div className="space-y-1.5">
+        <h2 className="text-4xl font-serif italic font-bold text-white leading-none">Social</h2>
+        <p className="text-zinc-500 text-[10px] uppercase tracking-[0.2em] font-bold">Insights da Rede Unihia</p>
+      </div>
+      <div className="p-2.5 bg-white/5 rounded-2xl border border-white/10">
+        <Users className="text-unihia-accent" size={18} />
+      </div>
+    </div>
+    
+    {[1, 2].map((i) => (
+      <div key={i} className="glass-card p-6 space-y-6">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-unihia-accent to-orange-900 p-[1px]">
+            <div className="w-full h-full rounded-2xl bg-black flex items-center justify-center overflow-hidden">
+              <div className="w-full h-full bg-zinc-900 flex items-center justify-center">
+                <Users size={20} className="text-zinc-700" />
+              </div>
+            </div>
+          </div>
+          <div>
+            <p className="text-sm font-bold text-white tracking-tight">Orquestrador #{i}42</p>
+            <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-black">Nível 4 • Estrategista</p>
+          </div>
+          <div className="ml-auto">
+            <button className="p-2 text-zinc-700 hover:text-unihia-accent transition-colors">
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        </div>
+        <p className="text-zinc-300 text-sm leading-relaxed font-medium">
+          Acabei de implementar o novo fluxo do Laboratório para análise de mercado imobiliário em Luanda. Os resultados são impressionantes. Alguém mais testando?
+        </p>
+        <div className="flex items-center gap-8 pt-5 border-t border-white/[0.04]">
+          <button className="flex items-center gap-2 text-zinc-500 hover:text-unihia-accent transition-all group">
+            <MessageSquare size={16} className="group-hover:scale-110 transition-transform" /> 
+            <span className="text-[10px] font-black">12</span>
+          </button>
+          <button className="flex items-center gap-2 text-zinc-500 hover:text-unihia-accent transition-all group">
+            <Share2 size={16} className="group-hover:scale-110 transition-transform" /> 
+            <span className="text-[10px] font-black uppercase tracking-widest">Partilhar</span>
+          </button>
+          <button className="ml-auto text-zinc-500 hover:text-unihia-accent transition-all group">
+            <Bookmark size={16} className="group-hover:scale-110 transition-transform" />
+          </button>
+        </div>
+      </div>
+    ))}
+  </motion.div>
+);
+
+const MarketScreen = () => (
+  <motion.div 
+    initial={{ opacity: 0, y: -20 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="p-6 pt-24 pb-32 space-y-10"
+  >
+    <div className="flex items-end justify-between">
+      <div className="space-y-1.5">
+        <h2 className="text-4xl font-serif italic font-bold text-white leading-none">Mercado</h2>
+        <p className="text-zinc-500 text-[10px] uppercase tracking-[0.2em] font-bold">Ativos Digitais & Serviços</p>
+      </div>
+      <div className="p-2.5 bg-white/5 rounded-2xl border border-white/10">
+        <ShoppingBag className="text-unihia-accent" size={18} />
+      </div>
+    </div>
+
+    <div className="grid grid-cols-2 gap-5">
+      {[
+        { name: 'Dataset Financeiro', price: '2.5k UNH', category: 'Dados' },
+        { name: 'Licença Pro Lab', price: '500 UNH', category: 'Ferramenta' },
+        { name: 'Mentoria IA', price: '1.2k UNH', category: 'Serviço' },
+        { name: 'API Premium', price: '3k UNH', category: 'Acesso' },
+      ].map((item) => (
+        <motion.div 
+          key={item.name} 
+          whileHover={{ scale: 1.03 }}
+          className="glass-card p-5 space-y-5 flex flex-col group cursor-pointer"
+        >
+          <div className="aspect-square bg-white/[0.02] border border-white/[0.05] rounded-2xl flex items-center justify-center group-hover:bg-white/[0.05] transition-all duration-500 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-unihia-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <ShoppingBag className="text-zinc-800 group-hover:text-unihia-accent/20 transition-colors duration-500" size={48} />
+          </div>
+          <div className="space-y-1.5 flex-1">
+            <span className="text-[8px] uppercase tracking-[0.2em] text-zinc-500 font-black">{item.category}</span>
+            <h3 className="text-xs font-bold text-white leading-tight tracking-tight group-hover:text-unihia-accent transition-colors">{item.name}</h3>
+          </div>
+          <div className="pt-4 border-t border-white/[0.04] flex items-center justify-between">
+            <p className="text-unihia-accent font-mono text-[11px] font-black">{item.price}</p>
+            <button className="px-3.5 py-2 bg-unihia-accent text-black rounded-lg text-[9px] font-black uppercase tracking-widest active:scale-90 transition-all shadow-lg shadow-unihia-accent/10">
+              Obter
             </button>
           </div>
         </motion.div>
       ))}
     </div>
-  );
-}
+  </motion.div>
+);
 
-function CreationLab({ settings }: { settings: AppSettings }) {
-  const [prompt, setPrompt] = useState('');
-  const [roadmap, setRoadmap] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+const AITriadOverlay = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => (
+  <AnimatePresence>
+    {isOpen && (
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/95 backdrop-blur-3xl z-50 flex items-center justify-center p-6"
+      >
+        <motion.div 
+          initial={{ scale: 0.95, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.95, opacity: 0, y: 20 }}
+          className="w-full max-w-md space-y-12"
+        >
+          <div className="text-center space-y-8">
+            <div className="w-28 h-28 bg-unihia-accent rounded-[2.5rem] mx-auto flex items-center justify-center accent-glow border-[10px] border-white/5 animate-float">
+              <Zap className="text-black w-12 h-12 fill-current" />
+            </div>
+            <div className="space-y-3">
+              <h2 className="text-5xl font-bold text-white tracking-tighter leading-none">Tríade de IA</h2>
+              <p className="text-zinc-500 text-sm font-medium">Sinergia entre modelos para orquestração absoluta.</p>
+            </div>
+          </div>
 
-  const t = (key: string) => {
-    const lang = settings.language === 'Portuguese' ? 'Portuguese' : 'English';
-    return TRANSLATIONS[lang][key] || key;
-  };
+          <div className="grid grid-cols-1 gap-5">
+            {[
+              { title: 'Visão Estratégica', desc: 'Análise de cenários e predição de tendências.', color: 'from-blue-500/10' },
+              { title: 'Geração de Ativos', desc: 'Produção de código e mídia de alta fidelidade.', color: 'from-unihia-accent/10' },
+              { title: 'Execução Autônoma', desc: 'Delegação para agentes e fluxos inteligentes.', color: 'from-emerald-500/10' },
+            ].map((item) => (
+              <button key={item.title} className={`p-7 bg-white/[0.02] border border-white/[0.06] rounded-[2rem] text-left hover:bg-white/[0.05] transition-all group relative overflow-hidden`}>
+                <div className={`absolute inset-0 bg-gradient-to-r ${item.color} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+                <div className="relative z-10 flex items-center justify-between">
+                  <div className="space-y-1.5">
+                    <h3 className="font-bold text-xl text-white group-hover:text-unihia-accent transition-colors tracking-tight">{item.title}</h3>
+                    <p className="text-xs text-zinc-500 group-hover:text-zinc-300 transition-colors font-medium">{item.desc}</p>
+                  </div>
+                  <ChevronRight className="text-zinc-800 group-hover:text-unihia-accent transition-colors" size={20} />
+                </div>
+              </button>
+            ))}
+          </div>
 
-  const generateRoadmap = async () => {
-    if (!prompt) return;
-    setLoading(true);
-    try {
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: `Create a professional startup roadmap for this idea: "${prompt}". 
-        The user prefers ${settings.language}. IMPORTANT: All text fields MUST be in ${settings.language}.
-        Return JSON: { title, phases: [{ name, tasks: [string], timeline }] }`,
-        config: { responseMimeType: "application/json" }
-      });
-      setRoadmap(JSON.parse(response.text || '{}'));
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
+          <button 
+            onClick={onClose}
+            className="w-full py-4 text-zinc-600 hover:text-white transition-colors text-[10px] font-black uppercase tracking-[0.3em]"
+          >
+            Encerrar Sessão
+          </button>
+        </motion.div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
+
+// --- Main App ---
+
+function App() {
+  const [activeTab, setActiveTab] = useState<Tab>('radar');
+  const [isTriadOpen, setIsTriadOpen] = useState(false);
+
+  const renderScreen = () => {
+    switch (activeTab) {
+      case 'radar': return <RadarScreen />;
+      case 'lab': return <LabScreen />;
+      case 'comunidade': return <CommunityScreen />;
+      case 'mercado': return <MarketScreen />;
+      default: return <RadarScreen />;
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-12">
-      <div className="text-center space-y-4">
-        <h2 className="text-4xl font-serif font-bold">{t('ideaLaboratory')}</h2>
-        <p className="text-white/40">{t('transformSpark')}</p>
+    <div className="min-h-screen bg-unihia-dark text-white font-sans selection:bg-unihia-accent selection:text-black">
+      {/* Desktop Surround (Recipe 3/8) */}
+      <div className="fixed inset-0 hidden lg:flex items-center justify-center pointer-events-none z-0">
+        <div className="w-[1200px] h-[800px] bg-white/[0.01] border border-white/[0.03] rounded-[4rem] blur-3xl" />
       </div>
 
-      <div className="glass-card p-8 space-y-6">
-        <textarea 
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder={t('describeVision')}
-          className="w-full h-32 bg-white/5 border border-white/10 rounded-xl p-4 focus:outline-none focus:border-unihia-accent/50 transition-all resize-none"
-        />
-        <button 
-          onClick={generateRoadmap}
-          disabled={loading || !prompt}
-          className="w-full bg-gradient-to-r from-unihia-accent to-unihia-gold text-white font-bold py-4 rounded-xl flex items-center justify-center gap-3 shadow-xl shadow-unihia-accent/20 disabled:opacity-50"
-        >
-          {loading ? <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/20 border-t-white" /> : <Sparkles size={20} />}
-          {t('generateRoadmap')}
-        </button>
-      </div>
+      <Header />
+      
+      <main className="max-w-md mx-auto min-h-screen relative z-10">
+        {renderScreen()}
+      </main>
 
-      {roadmap && (
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-8"
-        >
-          <div className="flex items-center gap-4">
-            <div className="h-px flex-1 bg-white/10" />
-            <h3 className="text-xl font-serif italic text-unihia-gold">{roadmap.title}</h3>
-            <div className="h-px flex-1 bg-white/10" />
-          </div>
+      {/* Bottom Navigation (WhatsApp Style) */}
+      <nav className="fixed bottom-0 left-0 right-0 h-20 glass-nav z-40 flex items-center justify-center px-2">
+        <div className="w-full max-w-md flex items-center justify-around">
+          <button 
+            onClick={() => setActiveTab('radar')}
+            className={`flex flex-col items-center gap-1.5 transition-all duration-500 ${activeTab === 'radar' ? 'text-unihia-accent' : 'text-zinc-600'}`}
+          >
+            <Radar size={20} className={activeTab === 'radar' ? 'accent-glow' : ''} />
+            <span className="text-[8px] font-black uppercase tracking-[0.2em]">Radar</span>
+          </button>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {roadmap.phases.map((phase: any, idx: number) => (
-              <div key={idx} className="glass-card p-6 border-t-2 border-t-unihia-accent">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-xs font-mono text-white/40">Phase 0{idx + 1}</span>
-                  <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded-full">{phase.timeline}</span>
-                </div>
-                <h4 className="font-bold mb-4">{phase.name}</h4>
-                <ul className="space-y-2">
-                  {phase.tasks.map((task: string, tIdx: number) => (
-                    <li key={tIdx} className="text-xs text-white/60 flex items-start gap-2">
-                      <div className="w-1 h-1 rounded-full bg-unihia-accent mt-1.5" />
-                      {task}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      )}
-    </div>
-  );
-}
+          <button 
+            onClick={() => setActiveTab('lab')}
+            className={`flex flex-col items-center gap-1.5 transition-all duration-500 ${activeTab === 'lab' ? 'text-unihia-accent' : 'text-zinc-600'}`}
+          >
+            <FlaskConical size={20} className={activeTab === 'lab' ? 'accent-glow' : ''} />
+            <span className="text-[8px] font-black uppercase tracking-[0.2em]">Lab</span>
+          </button>
 
-function Marketplace({ settings }: { settings: AppSettings }) {
-  const projects = [
-    { id: 1, title: 'EcoTrack AI', price: '$45,000', type: 'Startup', metrics: { roi: '24%', impact: 'High' }, img: 'https://picsum.photos/seed/eco/800/400' },
-    { id: 2, title: 'DeFi Lending Protocol', price: '$120,000', type: 'Prototype', metrics: { roi: '40%', impact: 'Medium' }, img: 'https://picsum.photos/seed/defi/800/400' },
-    { id: 3, title: 'HealthSync Wearable', price: '$250,000', type: 'Business Model', metrics: { roi: '18%', impact: 'Global' }, img: 'https://picsum.photos/seed/health/800/400' },
-  ];
-
-  const t = (key: string) => {
-    const lang = settings.language === 'Portuguese' ? 'Portuguese' : 'English';
-    return TRANSLATIONS[lang][key] || key;
-  };
-
-  return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-end">
-        <div>
-          <h2 className="text-3xl font-serif font-bold">{t('innovationMarket')}</h2>
-          <p className="text-white/40">{t('acquireInvest')}</p>
-        </div>
-        <div className="flex gap-2">
-          <button className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm font-medium">{t('filter')}</button>
-          <button className="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm font-medium">{t('sort')}</button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-        {projects.map((p) => (
-          <div key={p.id} className="glass-card overflow-hidden group">
-            <div className="h-48 relative">
-              <img src={p.img} alt={p.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-              <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-unihia-gold">
-                {p.price}
-              </div>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">{p.type}</span>
-                <div className="flex gap-2">
-                  <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full">{t('roi')}: {p.metrics.roi}</span>
-                </div>
-              </div>
-              <h3 className="text-xl font-bold">{p.title}</h3>
-              <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                <div className="flex -space-x-2">
-                  {[1,2,3].map(i => <img key={i} src={`https://picsum.photos/seed/${i+10}/50/50`} className="w-6 h-6 rounded-full border border-unihia-dark" referrerPolicy="no-referrer" />)}
-                  <div className="w-6 h-6 rounded-full bg-white/10 border border-unihia-dark flex items-center justify-center text-[8px]">+12</div>
-                </div>
-                <button className="text-unihia-accent text-sm font-bold flex items-center gap-1 hover:gap-2 transition-all">
-                  {t('viewDetails')} <ArrowUpRight size={16} />
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function Community({ settings }: { settings: AppSettings }) {
-  const t = (key: string) => {
-    const lang = settings.language === 'Portuguese' ? 'Portuguese' : 'English';
-    return TRANSLATIONS[lang][key] || key;
-  };
-
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <div className="lg:col-span-2 space-y-8">
-        <div className="glass-card p-8">
-          <h3 className="text-xl font-bold mb-6">{t('activeRooms')}</h3>
-          <div className="space-y-4">
-            {[1,2,3].map(i => (
-              <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5 hover:border-unihia-accent/30 transition-all cursor-pointer">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-unihia-accent to-unihia-gold flex items-center justify-center font-bold">
-                    P{i}
-                  </div>
-                  <div>
-                    <h4 className="font-bold">Mars Colony Logistics v{i}.0</h4>
-                    <p className="text-xs text-white/40">12 {t('members')} • 4 {t('tasksPending')}</p>
-                  </div>
-                </div>
-                <button className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg text-xs font-bold transition-all">{t('joinRoom')}</button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="glass-card p-8">
-          <h3 className="text-xl font-bold mb-6">{t('suggestedCollaborators')}</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[1,2,3,4].map(i => (
-              <div key={i} className="flex items-center gap-4 p-4 bg-white/5 rounded-xl">
-                <img src={`https://picsum.photos/seed/user${i}/100/100`} className="w-12 h-12 rounded-full" referrerPolicy="no-referrer" />
-                <div>
-                  <h4 className="text-sm font-bold">User Name {i}</h4>
-                  <p className="text-[10px] text-white/40">{t('expertIn')}</p>
-                  <div className="mt-2 flex gap-1">
-                    <span className="text-[8px] bg-unihia-accent/10 text-unihia-accent px-1.5 py-0.5 rounded">98% {t('matchScore')}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-8">
-        <div className="glass-card p-6">
-          <h3 className="text-lg font-bold mb-4">{t('leaderboard')}</h3>
-          <div className="space-y-4">
-            {[1,2,3,4,5].map(i => (
-              <div key={i} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-mono text-white/20">0{i}</span>
-                  <img src={`https://picsum.photos/seed/top${i}/50/50`} className="w-8 h-8 rounded-full" referrerPolicy="no-referrer" />
-                  <span className="text-sm font-medium">Alpha User {i}</span>
-                </div>
-                <span className="text-xs font-bold text-unihia-gold">{1200 - i * 50} pts</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-unihia-accent/10 border border-unihia-accent/20 rounded-2xl p-6">
-          <h3 className="text-lg font-bold text-unihia-accent mb-2">{t('globalImpact')}</h3>
-          <p className="text-xs text-white/60 mb-4">{t('globalImpactDesc')}</p>
-          <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-            <div className="h-full bg-unihia-accent w-3/4" />
-          </div>
-          <div className="flex justify-between mt-2 text-[10px] font-mono text-white/40">
-            <span>$0</span>
-            <span>$3.2M {t('target')}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Investors({ settings }: { settings: AppSettings }) {
-  const t = (key: string) => {
-    const lang = settings.language === 'Portuguese' ? 'Portuguese' : 'English';
-    return TRANSLATIONS[lang][key] || key;
-  };
-
-  return (
-    <div className="space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="glass-card p-6 flex flex-col items-center justify-center text-center space-y-2">
-          <Globe className="text-unihia-accent" size={32} />
-          <h3 className="text-2xl font-bold">$1.2B</h3>
-          <p className="text-xs text-white/40 uppercase tracking-widest">{t('availableLiquidity')}</p>
-        </div>
-        <div className="glass-card p-6 flex flex-col items-center justify-center text-center space-y-2">
-          <Briefcase className="text-emerald-400" size={32} />
-          <h3 className="text-2xl font-bold">452</h3>
-          <p className="text-xs text-white/40 uppercase tracking-widest">{t('activeFunds')}</p>
-        </div>
-        <div className="glass-card p-6 flex flex-col items-center justify-center text-center space-y-2">
-          <TrendingUp className="text-blue-400" size={32} />
-          <h3 className="text-2xl font-bold">12.4%</h3>
-          <p className="text-xs text-white/40 uppercase tracking-widest">{t('avgRoi')} (Q1)</p>
-        </div>
-      </div>
-
-      <div className="glass-card p-8">
-        <h3 className="text-xl font-bold mb-6">{t('opportunitiesForYou')}</h3>
-        <div className="space-y-6">
-          {[1,2].map(i => (
-            <div key={i} className="p-6 bg-white/5 rounded-2xl border border-white/5 flex flex-col md:flex-row gap-6">
-              <img src={`https://picsum.photos/seed/inv${i}/300/200`} className="w-full md:w-48 h-32 object-cover rounded-xl" referrerPolicy="no-referrer" />
-                <div className="flex-1 space-y-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="text-lg font-bold">Project Phoenix: Sustainable Energy</h4>
-                      <p className="text-sm text-white/60">{t('mockInvestmentDesc')}</p>
-                    </div>
-                    <span className="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-[10px] font-bold uppercase">{t('highPotential')}</span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center p-2 bg-white/5 rounded-lg">
-                      <p className="text-[10px] text-white/40 uppercase">{t('valuation')}</p>
-                      <p className="text-sm font-bold">$3.2M</p>
-                    </div>
-                    <div className="text-center p-2 bg-white/5 rounded-lg">
-                      <p className="text-[10px] text-white/40 uppercase">{t('raised')}</p>
-                      <p className="text-sm font-bold">$1.1M</p>
-                    </div>
-                    <div className="text-center p-2 bg-white/5 rounded-lg">
-                      <p className="text-[10px] text-white/40 uppercase">{t('impact')}</p>
-                      <p className="text-sm font-bold">{t('global')}</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <button className="flex-1 bg-unihia-accent text-white font-bold py-2 rounded-lg text-sm">{t('investNow')}</button>
-                    <button className="flex-1 bg-white/10 hover:bg-white/20 text-white font-bold py-2 rounded-lg text-sm transition-all">{t('contactFounder')}</button>
-                  </div>
-                </div>
-              </div>
-            ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Chat({ settings }: { settings: AppSettings }) {
-  const t = (key: string) => {
-    const lang = settings.language === 'Portuguese' ? 'Portuguese' : 'English';
-    return TRANSLATIONS[lang][key] || key;
-  };
-
-  return (
-    <div className="h-[calc(100vh-200px)] glass-card flex overflow-hidden">
-      <div className="w-80 border-r border-white/5 flex flex-col">
-        <div className="p-4 border-b border-white/5">
-          <input type="text" placeholder={t('searchChats')} className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none" />
-        </div>
-        <div className="flex-1 overflow-y-auto unihia-scrollbar">
-          {[1,2,3,4,5].map(i => (
-            <div key={i} className={`p-4 flex items-center gap-3 cursor-pointer hover:bg-white/5 transition-all ${i === 1 ? 'bg-white/5' : ''}`}>
-              <div className="relative">
-                <img src={`https://picsum.photos/seed/chat${i}/50/50`} className="w-10 h-10 rounded-full" referrerPolicy="no-referrer" />
-                <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-unihia-dark rounded-full" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-center mb-1">
-                  <h4 className="text-sm font-bold truncate">Project Team Alpha</h4>
-                  <span className="text-[10px] text-white/20">12:45</span>
-                </div>
-                <p className="text-xs text-white/40 truncate">{t('mockAiChat')}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="flex-1 flex flex-col">
-        <div className="p-4 border-b border-white/5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src="https://picsum.photos/seed/chat1/50/50" className="w-10 h-10 rounded-full" referrerPolicy="no-referrer" />
-            <div>
-              <h4 className="text-sm font-bold">Project Team Alpha</h4>
-              <p className="text-[10px] text-emerald-400">{t('aiOrchestratorActive')}</p>
-            </div>
-          </div>
-          <div className="flex gap-4 text-white/40">
-            <button className="hover:text-white transition-colors"><Users size={20} /></button>
-            <button className="hover:text-white transition-colors"><Zap size={20} /></button>
-          </div>
-        </div>
-        <div className="flex-1 p-6 overflow-y-auto unihia-scrollbar space-y-6">
-          <div className="flex justify-center">
-            <span className="text-[10px] bg-white/5 px-3 py-1 rounded-full text-white/40 uppercase tracking-widest">{t('today')}</span>
-          </div>
-          <div className="flex gap-3">
-            <img src="https://picsum.photos/seed/user2/50/50" className="w-8 h-8 rounded-full" referrerPolicy="no-referrer" />
-            <div className="bg-white/5 rounded-2xl rounded-tl-none p-4 max-w-md">
-              <p className="text-sm">{t('mockUserChat')}</p>
-            </div>
-          </div>
-          <div className="flex gap-3 flex-row-reverse">
-            <div className="bg-unihia-accent rounded-2xl rounded-tr-none p-4 max-w-md">
-              <p className="text-sm text-white">{t('mockUserResponse')}</p>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-full bg-unihia-accent flex items-center justify-center text-white">
-              <Zap size={14} fill="currentColor" />
-            </div>
-            <div className="bg-unihia-accent/10 border border-unihia-accent/20 rounded-2xl rounded-tl-none p-4 max-w-md">
-              <p className="text-xs font-bold text-unihia-accent mb-2">{t('aiSuggestion')}</p>
-              <p className="text-sm">{t('mockAiSuggestion')}</p>
-              <button className="mt-3 text-[10px] font-bold bg-unihia-accent text-white px-3 py-1 rounded-full">{t('applySuggestion')}</button>
-            </div>
-          </div>
-        </div>
-        <div className="p-4 border-t border-white/5">
-          <div className="bg-white/5 rounded-xl p-2 flex items-center gap-2">
-            <button className="p-2 text-white/40 hover:text-white transition-colors"><Plus size={20} /></button>
-            <input type="text" placeholder={t('typeMessage')} className="flex-1 bg-transparent border-none focus:outline-none text-sm" />
-            <button className="bg-unihia-accent p-2 rounded-lg text-white"><ArrowUpRight size={20} /></button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Profile({ settings, user }: { settings: AppSettings, user: User }) {
-  const t = (key: string) => {
-    const lang = settings.language === 'Portuguese' ? 'Portuguese' : 'English';
-    return TRANSLATIONS[lang][key] || key;
-  };
-
-  return (
-    <div className="max-w-5xl mx-auto space-y-12">
-      <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
-        <div className="relative">
-          <img src={user.avatar} alt={user.name} className="w-40 h-40 rounded-3xl object-cover border-4 border-white/5 shadow-2xl" referrerPolicy="no-referrer" />
-          <div className="absolute -bottom-4 -right-4 bg-unihia-accent p-3 rounded-2xl shadow-xl">
-            <Zap className="text-white" size={24} fill="currentColor" />
-          </div>
-        </div>
-        <div className="flex-1 text-center md:text-left space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-4xl font-serif font-bold">{user.name}</h2>
-              <p className="text-unihia-gold font-mono text-sm">{t('verifiedArchitect')} • {t('topExecution')}</p>
-            </div>
-            <div className="flex gap-3 justify-center">
-              <button className="bg-white text-black font-bold px-6 py-2 rounded-xl text-sm">{t('editProfile')}</button>
-              <button className="bg-white/5 border border-white/10 px-6 py-2 rounded-xl text-sm font-bold">{t('share')}</button>
-            </div>
-          </div>
-          <p className="text-white/60 leading-relaxed max-w-2xl">{user.bio}</p>
-          <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-            {user.skills.map(s => <span key={s} className="bg-white/5 border border-white/10 px-3 py-1 rounded-full text-xs font-medium">{s}</span>)}
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="glass-card p-6 text-center">
-          <p className="text-[10px] text-white/40 uppercase tracking-widest mb-1">{t('reputation')}</p>
-          <p className="text-2xl font-bold text-unihia-gold">{user.reputation}</p>
-        </div>
-        <div className="glass-card p-6 text-center">
-          <p className="text-[10px] text-white/40 uppercase tracking-widest mb-1">{t('projects')}</p>
-          <p className="text-2xl font-bold">24</p>
-        </div>
-        <div className="glass-card p-6 text-center">
-          <p className="text-[10px] text-white/40 uppercase tracking-widest mb-1">{t('investments')}</p>
-          <p className="text-2xl font-bold">12</p>
-        </div>
-        <div className="glass-card p-6 text-center">
-          <p className="text-[10px] text-white/40 uppercase tracking-widest mb-1">{t('collaborations')}</p>
-          <p className="text-2xl font-bold">156</p>
-        </div>
-      </div>
-
-      <div className="space-y-6">
-        <h3 className="text-xl font-bold">{t('executionHistory')}</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {[1,2,3,4].map(i => (
-            <div key={i} className="glass-card p-6 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center">
-                <Rocket size={24} className="text-white/40" />
-              </div>
-              <div>
-                <h4 className="font-bold">Project Name {i}</h4>
-                <p className="text-xs text-white/40">{t('successfullyExited')} $1.2M • 2025</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function SavedLibrary({ settings, items }: { settings: AppSettings, items: SavedItem[] }) {
-  const [filter, setFilter] = useState('all');
-
-  const t = (key: string) => {
-    const lang = settings.language === 'Portuguese' ? 'Portuguese' : 'English';
-    return TRANSLATIONS[lang][key] || key;
-  };
-
-  const filtered = items.filter(i => filter === 'all' || i.type === filter);
-
-  return (
-    <div className="space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-serif font-bold">{t('personalLibrary')}</h2>
-          <p className="text-white/40">{t('curatedCollection')}</p>
-        </div>
-        <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 unihia-scrollbar">
-          {['all', 'pin', 'idea', 'project'].map(f => (
+          {/* Central Action Button (Botão de Raio) */}
+          <div className="relative -top-8">
             <button 
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-4 py-2 rounded-full text-xs font-bold capitalize transition-all whitespace-nowrap ${
-                filter === f ? 'bg-unihia-accent text-white' : 'bg-white/5 text-white/40 hover:text-white'
-              }`}
+              onClick={() => setIsTriadOpen(true)}
+              className="w-16 h-16 bg-unihia-accent rounded-[1.5rem] flex items-center justify-center accent-glow active:scale-90 transition-all duration-500 border-[6px] border-black group"
             >
-              {f}
+              <Zap className="text-black w-8 h-8 fill-current group-hover:scale-110 transition-transform" />
             </button>
-          ))}
-        </div>
-      </div>
+          </div>
 
-      {items.length === 0 ? (
-        <div className="h-64 glass-card flex flex-col items-center justify-center text-center p-8">
-          <ShoppingBag size={48} className="text-white/10 mb-4" />
-          <h3 className="text-xl font-bold mb-2">{t('libraryEmpty')}</h3>
-          <p className="text-sm text-white/40 max-w-xs">{t('savePrompt')}</p>
+          <button 
+            onClick={() => setActiveTab('comunidade')}
+            className={`flex flex-col items-center gap-1.5 transition-all duration-500 ${activeTab === 'comunidade' ? 'text-unihia-accent' : 'text-zinc-600'}`}
+          >
+            <Users size={20} className={activeTab === 'comunidade' ? 'accent-glow' : ''} />
+            <span className="text-[8px] font-black uppercase tracking-[0.2em]">Social</span>
+          </button>
+
+          <button 
+            onClick={() => setActiveTab('mercado')}
+            className={`flex flex-col items-center gap-1.5 transition-all duration-500 ${activeTab === 'mercado' ? 'text-unihia-accent' : 'text-zinc-600'}`}
+          >
+            <ShoppingBag size={20} className={activeTab === 'mercado' ? 'accent-glow' : ''} />
+            <span className="text-[8px] font-black uppercase tracking-[0.2em]">Mercado</span>
+          </button>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtered.map(item => (
-            <div key={item.id} className="glass-card p-6 space-y-4 group">
-              <div className="flex justify-between items-start">
-                <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded-full uppercase tracking-widest">{item.type}</span>
-                <span className="text-[10px] text-white/20">{new Date(item.savedAt).toLocaleDateString()}</span>
-              </div>
-              <h4 className="text-lg font-bold group-hover:text-unihia-accent transition-colors">{item.title}</h4>
-              <p className="text-xs text-white/40">{t('category')}: {item.category}</p>
-              <button className="w-full py-2 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-bold transition-all">{t('viewDetails')}</button>
-            </div>
-          ))}
-        </div>
-      )}
+      </nav>
+
+      {/* AI Triad Modal */}
+      <AITriadOverlay isOpen={isTriadOpen} onClose={() => setIsTriadOpen(false)} />
     </div>
   );
 }
 
-function SettingsHub({ settings, setSettings }: { settings: AppSettings, setSettings: (s: AppSettings) => void }) {
-  const languages = ['English', 'Portuguese', 'Spanish', 'French', 'German', 'Japanese', 'Chinese'];
-  const themes = ['dark', 'light', 'gradient'];
-  const fonts = ['sans', 'serif', 'mono'];
-  const layouts = ['grid', 'masonry', 'list'];
-
-  const t = (key: string) => {
-    const lang = settings.language === 'Portuguese' ? 'Portuguese' : 'English';
-    return TRANSLATIONS[lang][key] || key;
-  };
-
-  return (
-    <div className="max-w-4xl mx-auto space-y-12">
-      <div className="text-center space-y-4">
-        <h2 className="text-4xl font-serif font-bold">{t('advancedDefinitions')}</h2>
-        <p className="text-white/40">{t('customizeExperience')}</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Visual Customization */}
-        <div className="glass-card p-8 space-y-8">
-          <h3 className="text-xl font-bold flex items-center gap-2">
-            <Sparkles className="text-unihia-accent" size={20} />
-            {t('visualInterface')}
-          </h3>
-          
-          <div className="space-y-4">
-            <label className="text-xs font-bold text-white/40 uppercase tracking-widest">{t('themeMode')}</label>
-            <div className="grid grid-cols-3 gap-2">
-              {themes.map(tMode => (
-                <button 
-                  key={tMode}
-                  onClick={() => setSettings({ ...settings, theme: tMode as any })}
-                  className={`py-2 rounded-lg text-xs font-bold capitalize border transition-all ${
-                    settings.theme === tMode ? 'bg-unihia-accent border-unihia-accent' : 'bg-white/5 border-white/10 hover:border-white/20'
-                  }`}
-                >
-                  {tMode}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <label className="text-xs font-bold text-white/40 uppercase tracking-widest">{t('accentColor')}</label>
-            <div className="flex gap-3">
-              {['#F27D26', '#D4AF37', '#10B981', '#3B82F6', '#8B5CF6'].map(c => (
-                <button 
-                  key={c}
-                  onClick={() => setSettings({ ...settings, accentColor: c })}
-                  className={`w-8 h-8 rounded-full border-2 transition-all ${
-                    settings.accentColor === c ? 'border-white scale-110' : 'border-transparent'
-                  }`}
-                  style={{ backgroundColor: c }}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <label className="text-xs font-bold text-white/40 uppercase tracking-widest">{t('typography')}</label>
-            <div className="grid grid-cols-3 gap-2">
-              {fonts.map(f => (
-                <button 
-                  key={f}
-                  onClick={() => setSettings({ ...settings, fontFamily: f as any })}
-                  className={`py-2 rounded-lg text-xs font-bold capitalize border transition-all font-${f} ${
-                    settings.fontFamily === f ? 'bg-unihia-accent border-unihia-accent' : 'bg-white/5 border-white/10 hover:border-white/20'
-                  }`}
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Functional Settings */}
-        <div className="glass-card p-8 space-y-8">
-          <h3 className="text-xl font-bold flex items-center gap-2">
-            <Zap className="text-unihia-accent" size={20} />
-            {t('systemAi')}
-          </h3>
-
-          <div className="space-y-4">
-            <label className="text-xs font-bold text-white/40 uppercase tracking-widest">{t('globalLanguage')}</label>
-            <select 
-              value={settings.language}
-              onChange={(e) => setSettings({ ...settings, language: e.target.value })}
-              className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-sm focus:outline-none focus:border-unihia-accent/50"
-            >
-              {languages.map(l => <option key={l} value={l} className="bg-unihia-dark">{l}</option>)}
-            </select>
-          </div>
-
-          <div className="space-y-4">
-            <label className="text-xs font-bold text-white/40 uppercase tracking-widest">{t('feedLayout')}</label>
-            <div className="grid grid-cols-3 gap-2">
-              {layouts.map(l => (
-                <button 
-                  key={l}
-                  onClick={() => setSettings({ ...settings, feedLayout: l as any })}
-                  className={`py-2 rounded-lg text-xs font-bold capitalize border transition-all ${
-                    settings.feedLayout === l ? 'bg-unihia-accent border-unihia-accent' : 'bg-white/5 border-white/10 hover:border-white/20'
-                  }`}
-                >
-                  {l}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <label className="text-xs font-bold text-white/40 uppercase tracking-widest">{t('aiInterventionLevel')}</label>
-              <span className="text-xs font-mono text-unihia-accent">{settings.aiInterventionLevel}%</span>
-            </div>
-            <input 
-              type="range" 
-              min="0" 
-              max="100" 
-              value={settings.aiInterventionLevel}
-              onChange={(e) => setSettings({ ...settings, aiInterventionLevel: parseInt(e.target.value) })}
-              className="w-full accent-unihia-accent"
-            />
-            <p className="text-[10px] text-white/20">{t('aiInterventionDesc')}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex justify-center gap-4">
-        <button className="px-8 py-3 bg-white/5 border border-white/10 rounded-xl text-sm font-bold hover:bg-white/10 transition-all">{t('backupConfiguration')}</button>
-        <button className="px-8 py-3 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-sm font-bold hover:bg-red-500/20 transition-all">{t('terminateAllSessions')}</button>
-      </div>
-    </div>
-  );
-}
-
-
+export default App;
