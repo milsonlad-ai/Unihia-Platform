@@ -270,7 +270,7 @@ const MarketScreen = () => (
   </motion.div>
 );
 
-const AITriadOverlay = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => (
+const AITriadOverlay = ({ isOpen, onClose, onAction, isProcessing }: { isOpen: boolean, onClose: () => void, onAction: () => void, isProcessing: boolean }) => (
   <AnimatePresence>
     {isOpen && (
       <motion.div 
@@ -286,29 +286,42 @@ const AITriadOverlay = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => v
           className="w-full max-w-md space-y-12"
         >
           <div className="text-center space-y-8">
-            <div className="w-28 h-28 bg-unihia-accent rounded-[2.5rem] mx-auto flex items-center justify-center accent-glow border-[10px] border-white/5 animate-float">
-              <Zap className="text-black w-12 h-12 fill-current" />
+            <div className={`w-28 h-28 bg-unihia-accent rounded-[2.5rem] mx-auto flex items-center justify-center accent-glow border-[10px] border-white/5 ${isProcessing ? 'animate-pulse scale-110' : 'animate-float'}`}>
+              <Zap className={`text-black w-12 h-12 fill-current ${isProcessing ? 'animate-spin-slow' : ''}`} />
             </div>
             <div className="space-y-3">
-              <h2 className="text-5xl font-bold text-white tracking-tighter leading-none">Tríade de IA</h2>
-              <p className="text-zinc-500 text-sm font-medium">Sinergia entre modelos para orquestração absoluta.</p>
+              <h2 className="text-5xl font-bold text-white tracking-tighter leading-none">
+                {isProcessing ? 'Orquestrando...' : 'Tríade de IA'}
+              </h2>
+              <p className="text-zinc-500 text-sm font-medium">
+                {isProcessing ? 'Sincronizando modelos de alta fidelidade.' : 'Sinergia entre modelos para orquestração absoluta.'}
+              </p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 gap-5">
             {[
-              { title: 'Visão Estratégica', desc: 'Análise de cenários e predição de tendências.', color: 'from-blue-500/10' },
-              { title: 'Geração de Ativos', desc: 'Produção de código e mídia de alta fidelidade.', color: 'from-unihia-accent/10' },
-              { title: 'Execução Autônoma', desc: 'Delegação para agentes e fluxos inteligentes.', color: 'from-emerald-500/10' },
+              { id: 'strategic', title: 'Visão Estratégica', desc: 'Análise de cenários e predição de tendências.', color: 'from-blue-500/10' },
+              { id: 'assets', title: 'Geração de Ativos', desc: 'Produção de código e mídia de alta fidelidade.', color: 'from-unihia-accent/10' },
+              { id: 'execution', title: 'Execução Autônoma', desc: 'Delegação para agentes e fluxos inteligentes.', color: 'from-emerald-500/10' },
             ].map((item) => (
-              <button key={item.title} className={`p-7 bg-white/[0.02] border border-white/[0.06] rounded-[2rem] text-left hover:bg-white/[0.05] transition-all group relative overflow-hidden`}>
+              <button 
+                key={item.id} 
+                onClick={onAction}
+                disabled={isProcessing}
+                className={`p-7 bg-white/[0.02] border border-white/[0.06] rounded-[2rem] text-left hover:bg-white/[0.05] transition-all group relative overflow-hidden ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
                 <div className={`absolute inset-0 bg-gradient-to-r ${item.color} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
                 <div className="relative z-10 flex items-center justify-between">
                   <div className="space-y-1.5">
                     <h3 className="font-bold text-xl text-white group-hover:text-unihia-accent transition-colors tracking-tight">{item.title}</h3>
                     <p className="text-xs text-zinc-500 group-hover:text-zinc-300 transition-colors font-medium">{item.desc}</p>
                   </div>
-                  <ChevronRight className="text-zinc-800 group-hover:text-unihia-accent transition-colors" size={20} />
+                  {isProcessing ? (
+                    <div className="w-5 h-5 border-2 border-unihia-accent border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <ChevronRight className="text-zinc-800 group-hover:text-unihia-accent transition-colors" size={20} />
+                  )}
                 </div>
               </button>
             ))}
@@ -316,7 +329,8 @@ const AITriadOverlay = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => v
 
           <button 
             onClick={onClose}
-            className="w-full py-4 text-zinc-600 hover:text-white transition-colors text-[10px] font-black uppercase tracking-[0.3em]"
+            disabled={isProcessing}
+            className="w-full py-4 text-zinc-600 hover:text-white transition-colors text-[10px] font-black uppercase tracking-[0.3em] disabled:opacity-30"
           >
             Encerrar Sessão
           </button>
@@ -331,6 +345,16 @@ const AITriadOverlay = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => v
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('radar');
   const [isTriadOpen, setIsTriadOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleAIAction = () => {
+    setIsProcessing(true);
+    setIsTriadOpen(false);
+    // Simulate processing
+    setTimeout(() => {
+      setIsProcessing(false);
+    }, 3000);
+  };
 
   const renderScreen = () => {
     switch (activeTab) {
@@ -378,9 +402,12 @@ function App() {
           <div className="relative -top-8">
             <button 
               onClick={() => setIsTriadOpen(true)}
-              className="w-16 h-16 bg-unihia-accent rounded-[1.5rem] flex items-center justify-center accent-glow active:scale-90 transition-all duration-500 border-[6px] border-black group"
+              className={`w-16 h-16 bg-unihia-accent rounded-[1.5rem] flex items-center justify-center accent-glow active:scale-90 transition-all duration-500 border-[6px] border-black group ${isProcessing ? 'animate-pulse scale-110' : ''}`}
             >
-              <Zap className="text-black w-8 h-8 fill-current group-hover:scale-110 transition-transform" />
+              <Zap className={`text-black w-8 h-8 fill-current group-hover:scale-110 transition-transform ${isProcessing ? 'animate-spin-slow' : ''}`} />
+              {isProcessing && (
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full border-2 border-black animate-bounce" />
+              )}
             </button>
           </div>
 
@@ -403,7 +430,12 @@ function App() {
       </nav>
 
       {/* AI Triad Modal */}
-      <AITriadOverlay isOpen={isTriadOpen} onClose={() => setIsTriadOpen(false)} />
+      <AITriadOverlay 
+        isOpen={isTriadOpen} 
+        onClose={() => setIsTriadOpen(false)} 
+        onAction={handleAIAction}
+        isProcessing={isProcessing}
+      />
     </div>
   );
 }

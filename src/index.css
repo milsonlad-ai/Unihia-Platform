@@ -13,6 +13,9 @@
   --color-unihia-accent: #F27D26;
   --color-unihia-accent-glow: rgba(242, 125, 38, 0.25);
   --color-unihia-border: rgba(255, 255, 255, 0.08);
+
+  --animate-spin-slow: spin 3s linear infinite;
+  --animate-pulse-fast: pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 @layer base {
