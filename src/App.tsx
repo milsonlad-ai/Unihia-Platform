@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { GoogleGenAI } from "@google/genai";
 import { 
   Radar, 
   FlaskConical, 
@@ -16,12 +17,14 @@ import {
   Sparkles,
   Brain,
   Cpu,
-  Loader2
+  Loader2,
+  Compass
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { InspirationFeed } from './components/InspirationFeed';
 
 // --- Types ---
-type Tab = 'radar' | 'lab' | 'comunidade' | 'mercado';
+type Tab = 'radar' | 'lab' | 'comunidade' | 'mercado' | 'inspiracao';
 
 // --- Components ---
 
@@ -223,53 +226,184 @@ const CommunityScreen = () => (
   </motion.div>
 );
 
-const MarketScreen = () => (
-  <motion.div 
-    initial={{ opacity: 0, y: -20 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="p-6 pt-24 pb-32 space-y-10"
-  >
-    <div className="flex items-end justify-between">
-      <div className="space-y-1.5">
-        <h2 className="text-4xl font-serif italic font-bold text-white leading-none">Mercado</h2>
-        <p className="text-zinc-500 text-[10px] uppercase tracking-[0.2em] font-bold">Ativos Digitais & Serviços</p>
-      </div>
-      <div className="p-2.5 bg-white/5 rounded-2xl border border-white/10">
-        <ShoppingBag className="text-unihia-accent" size={18} />
-      </div>
-    </div>
+const MarketScreen = () => {
+  const [idea, setIdea] = useState('');
+  const [analysis, setAnalysis] = useState<any>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-    <div className="grid grid-cols-2 gap-5">
-      {[
-        { name: 'Dataset Financeiro', price: '2.5k UNH', category: 'Dados' },
-        { name: 'Licença Pro Lab', price: '500 UNH', category: 'Ferramenta' },
-        { name: 'Mentoria IA', price: '1.2k UNH', category: 'Serviço' },
-        { name: 'API Premium', price: '3k UNH', category: 'Acesso' },
-      ].map((item) => (
-        <motion.div 
-          key={item.name} 
-          whileHover={{ scale: 1.03 }}
-          className="glass-card p-5 space-y-5 flex flex-col group cursor-pointer"
+  const trends = [
+    { title: "IA Generativa em Logística", growth: "+145%", sentiment: "Alto" },
+    { title: "SaaS de Sustentabilidade", growth: "+82%", sentiment: "Estável" },
+    { title: "EdTechs de Micro-learning", growth: "+210%", sentiment: "Explosivo" },
+  ];
+
+  const analyzeIdea = async () => {
+    if (!idea) return;
+    setIsAnalyzing(true);
+    
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: `Analise a seguinte ideia de negócio para o mercado brasileiro: "${idea}". 
+        Forneça um JSON com os campos: 
+        potential (string curta), 
+        demand (string curta), 
+        competition (string curta), 
+        score (número de 0 a 100).`,
+        config: { responseMimeType: "application/json" }
+      });
+      
+      const result = JSON.parse(response.text || '{}');
+      setAnalysis(result);
+    } catch (error) {
+      console.error("Erro na análise:", error);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="p-6 pt-24 pb-32 space-y-10"
+    >
+      <div className="flex items-end justify-between">
+        <div className="space-y-1.5">
+          <h2 className="text-4xl font-serif italic font-bold text-white leading-none">Mercado</h2>
+          <p className="text-zinc-500 text-[10px] uppercase tracking-[0.2em] font-bold">Análise de Tendências & Ativos</p>
+        </div>
+        <div className="p-2.5 bg-white/5 rounded-2xl border border-white/10">
+          <ShoppingBag className="text-unihia-accent" size={18} />
+        </div>
+      </div>
+
+      {/* Tendências Emergentes */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-[10px] uppercase tracking-widest text-unihia-accent font-black">Tendências Emergentes</h3>
+          <TrendingUp className="w-4 h-4 text-unihia-accent" />
+        </div>
+        <div className="grid grid-cols-1 gap-4">
+          {trends.map((trend, i) => (
+            <motion.div 
+              key={i}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className="glass-card p-5 flex items-center justify-between group hover:border-unihia-accent/50 transition-colors"
+            >
+              <div>
+                <p className="text-white font-bold text-sm tracking-tight">{trend.title}</p>
+                <p className="text-zinc-500 text-[9px] uppercase tracking-wider font-black">Sentimento: {trend.sentiment}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-emerald-400 font-mono text-xs font-black">{trend.growth}</p>
+                <div className="w-16 h-1 bg-white/5 rounded-full mt-2 overflow-hidden">
+                  <div className="h-full bg-emerald-400 w-3/4" />
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* Validador de Ideias */}
+      <section className="bg-unihia-accent/5 border border-unihia-accent/10 p-7 rounded-[2.5rem] space-y-7 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-unihia-accent/5 blur-3xl -mr-16 -mt-16" />
+        
+        <div className="space-y-2 relative z-10">
+          <h3 className="text-xl font-bold text-white tracking-tight">Validador de Potencial</h3>
+          <p className="text-zinc-500 text-xs leading-relaxed font-medium">Descreva sua ideia para receber uma avaliação instantânea da Tríade de IA.</p>
+        </div>
+        
+        <textarea 
+          value={idea}
+          onChange={(e) => setIdea(e.target.value)}
+          placeholder="Ex: Uma plataforma de IA para otimizar o consumo de energia em condomínios..."
+          className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 text-white text-sm focus:border-unihia-accent outline-none transition-all min-h-[120px] resize-none font-medium placeholder:text-zinc-700"
+        />
+
+        <button 
+          onClick={analyzeIdea}
+          disabled={isAnalyzing || !idea}
+          className="w-full bg-unihia-accent text-black font-black py-5 rounded-2xl flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-50 shadow-xl shadow-unihia-accent/10 uppercase tracking-widest text-[11px]"
         >
-          <div className="aspect-square bg-white/[0.02] border border-white/[0.05] rounded-2xl flex items-center justify-center group-hover:bg-white/[0.05] transition-all duration-500 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-unihia-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <ShoppingBag className="text-zinc-800 group-hover:text-unihia-accent/20 transition-colors duration-500" size={48} />
-          </div>
-          <div className="space-y-1.5 flex-1">
-            <span className="text-[8px] uppercase tracking-[0.2em] text-zinc-500 font-black">{item.category}</span>
-            <h3 className="text-xs font-bold text-white leading-tight tracking-tight group-hover:text-unihia-accent transition-colors">{item.name}</h3>
-          </div>
-          <div className="pt-4 border-t border-white/[0.04] flex items-center justify-between">
-            <p className="text-unihia-accent font-mono text-[11px] font-black">{item.price}</p>
-            <button className="px-3.5 py-2 bg-unihia-accent text-black rounded-lg text-[9px] font-black uppercase tracking-widest active:scale-90 transition-all shadow-lg shadow-unihia-accent/10">
-              Obter
-            </button>
-          </div>
-        </motion.div>
-      ))}
-    </div>
-  </motion.div>
-);
+          {isAnalyzing ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span>Orquestrando Análise...</span>
+            </>
+          ) : (
+            <>
+              <Brain className="w-5 h-5" />
+              <span>Avaliar Potencial</span>
+            </>
+          )}
+        </button>
+
+        <AnimatePresence>
+          {analysis && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="pt-7 border-t border-white/[0.06] space-y-6 relative z-10"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-500 text-[9px] uppercase tracking-widest font-black">Score de Viabilidade</span>
+                <span className="text-unihia-accent font-mono text-2xl font-black">{analysis.score}/100</span>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="bg-white/[0.02] p-4 rounded-2xl border border-white/[0.04]">
+                  <p className="text-unihia-accent text-[8px] uppercase font-black tracking-widest mb-2">Potencial de Mercado</p>
+                  <p className="text-zinc-300 text-xs leading-relaxed font-medium">{analysis.potential}</p>
+                </div>
+                <div className="bg-white/[0.02] p-4 rounded-2xl border border-white/[0.04]">
+                  <p className="text-unihia-accent text-[8px] uppercase font-black tracking-widest mb-2">Demanda Estimada</p>
+                  <p className="text-zinc-300 text-xs leading-relaxed font-medium">{analysis.demand}</p>
+                </div>
+                <div className="bg-white/[0.02] p-4 rounded-2xl border border-white/[0.04]">
+                  <p className="text-unihia-accent text-[8px] uppercase font-black tracking-widest mb-2">Cenário Competitivo</p>
+                  <p className="text-zinc-300 text-xs leading-relaxed font-medium">{analysis.competition}</p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </section>
+
+      {/* Ativos Originais (Mantidos para consistência) */}
+      <div className="grid grid-cols-2 gap-5">
+        {[
+          { name: 'Dataset Financeiro', price: '2.5k UNH', category: 'Dados' },
+          { name: 'Licença Pro Lab', price: '500 UNH', category: 'Ferramenta' },
+        ].map((item) => (
+          <motion.div 
+            key={item.name} 
+            whileHover={{ scale: 1.03 }}
+            className="glass-card p-5 space-y-5 flex flex-col group cursor-pointer"
+          >
+            <div className="aspect-square bg-white/[0.02] border border-white/[0.05] rounded-2xl flex items-center justify-center group-hover:bg-white/[0.05] transition-all duration-500 relative overflow-hidden">
+              <ShoppingBag className="text-zinc-800 group-hover:text-unihia-accent/20 transition-colors duration-500" size={48} />
+            </div>
+            <div className="space-y-1.5 flex-1">
+              <span className="text-[8px] uppercase tracking-[0.2em] text-zinc-500 font-black">{item.category}</span>
+              <h3 className="text-xs font-bold text-white leading-tight tracking-tight group-hover:text-unihia-accent transition-colors">{item.name}</h3>
+            </div>
+            <div className="pt-4 border-t border-white/[0.04] flex items-center justify-between">
+              <p className="text-unihia-accent font-mono text-[11px] font-black">{item.price}</p>
+              <button className="px-3.5 py-2 bg-unihia-accent text-black rounded-lg text-[9px] font-black uppercase tracking-widest active:scale-90 transition-all">
+                Obter
+              </button>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  );
+};
 
 const AITriadOverlay = ({ isOpen, onClose, onAction, isProcessing }: { isOpen: boolean, onClose: () => void, onAction: () => void, isProcessing: boolean }) => (
   <AnimatePresence>
@@ -363,6 +497,7 @@ function App() {
       case 'lab': return <LabScreen />;
       case 'comunidade': return <CommunityScreen />;
       case 'mercado': return <MarketScreen />;
+      case 'inspiracao': return <InspirationFeed />;
       default: return <RadarScreen />;
     }
   };
@@ -392,11 +527,11 @@ function App() {
           </button>
 
           <button 
-            onClick={() => setActiveTab('lab')}
-            className={`flex flex-col items-center gap-1.5 transition-all duration-500 ${activeTab === 'lab' ? 'text-unihia-accent' : 'text-zinc-600'}`}
+            onClick={() => setActiveTab('inspiracao')}
+            className={`flex flex-col items-center gap-1.5 transition-all duration-500 ${activeTab === 'inspiracao' ? 'text-unihia-accent' : 'text-zinc-600'}`}
           >
-            <FlaskConical size={20} className={activeTab === 'lab' ? 'accent-glow' : ''} />
-            <span className="text-[8px] font-black uppercase tracking-[0.2em]">Lab</span>
+            <Compass size={20} className={activeTab === 'inspiracao' ? 'accent-glow' : ''} />
+            <span className="text-[8px] font-black uppercase tracking-[0.2em]">Inspiração</span>
           </button>
 
           {/* Central Action Button (Botão de Raio) */}
@@ -424,11 +559,11 @@ function App() {
           </div>
 
           <button 
-            onClick={() => setActiveTab('comunidade')}
-            className={`flex flex-col items-center gap-1.5 transition-all duration-500 ${activeTab === 'comunidade' ? 'text-unihia-accent' : 'text-zinc-600'}`}
+            onClick={() => setActiveTab('lab')}
+            className={`flex flex-col items-center gap-1.5 transition-all duration-500 ${activeTab === 'lab' ? 'text-unihia-accent' : 'text-zinc-600'}`}
           >
-            <Users size={20} className={activeTab === 'comunidade' ? 'accent-glow' : ''} />
-            <span className="text-[8px] font-black uppercase tracking-[0.2em]">Social</span>
+            <FlaskConical size={20} className={activeTab === 'lab' ? 'accent-glow' : ''} />
+            <span className="text-[8px] font-black uppercase tracking-[0.2em]">Lab</span>
           </button>
 
           <button 

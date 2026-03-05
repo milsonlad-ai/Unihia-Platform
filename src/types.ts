@@ -49,10 +49,40 @@ export interface Opportunity {
   status: 'pending' | 'accepted' | 'declined';
 }
 
-export interface Message {
-  id: number;
-  sender_id: string;
-  receiver_id: string;
-  content: string;
-  timestamp: string;
+export interface InspirationItem {
+  id: string;
+  type: 'image' | 'video';
+  mediaUrl: string;
+  title: string;
+  description: string;
+  author: {
+    name: string;
+    avatar: string;
+    level: string;
+  };
+  category: InspirationCategory;
+  interactions: {
+    likes: number;
+    saves: number;
+    comments: number;
+  };
+  tags: string[];
+}
+
+export type InspirationCategory = 
+  | 'tecnologia' 
+  | 'startups' 
+  | 'design' 
+  | 'inovação' 
+  | 'educação' 
+  | 'marketing' 
+  | 'inteligência artificial' 
+  | 'empreendedorismo';
+
+export interface UserBehavior {
+  likedIds: string[];
+  savedIds: string[];
+  viewTimes: Record<string, number>;
+  visitedCategories: InspirationCategory[];
+  createdProjectIds: string[];
 }
