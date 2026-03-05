@@ -1,0 +1,8 @@
+{
+  "name": "Unihia Platform",
+  "description": "Global ecosystem for opportunities, creation, and investment driven by orchestrated AI.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
