@@ -15,7 +15,8 @@ import {
   ChevronRight,
   Sparkles,
   Brain,
-  Cpu
+  Cpu,
+  Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -404,7 +405,18 @@ function App() {
               onClick={() => setIsTriadOpen(true)}
               className={`w-16 h-16 bg-unihia-accent rounded-[1.5rem] flex items-center justify-center accent-glow active:scale-90 transition-all duration-500 border-[6px] border-black group ${isProcessing ? 'animate-pulse scale-110' : ''}`}
             >
-              <Zap className={`text-black w-8 h-8 fill-current group-hover:scale-110 transition-transform ${isProcessing ? 'animate-spin-slow' : ''}`} />
+              <div className="relative flex items-center justify-center">
+                <Zap className={`text-black w-8 h-8 fill-current transition-all duration-500 ${isProcessing ? 'opacity-20 scale-75 blur-[1px]' : 'group-hover:scale-110'}`} />
+                {isProcessing && (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="absolute inset-0 flex items-center justify-center"
+                  >
+                    <Loader2 className="text-black w-8 h-8 animate-spin" />
+                  </motion.div>
+                )}
+              </div>
               {isProcessing && (
                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full border-2 border-black animate-bounce" />
               )}
