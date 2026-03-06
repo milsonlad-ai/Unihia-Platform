@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { TrendingUp, ChevronRight } from 'lucide-react';
+import { TrendingUp, ChevronRight, Plus, MessageSquare, Video } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const Home: React.FC = () => {
@@ -10,12 +10,30 @@ export const Home: React.FC = () => {
     { id: 3, title: 'Parceria Estratégica: Fintech BR', category: 'Finanças', match: '85%', time: '1d atrás', trend: '+5%', color: 'bg-emerald-500' },
   ];
 
+  const quickActions = [
+    { label: 'Novo Projeto', icon: Plus, to: '/create-idea', color: 'bg-unihia-accent text-black' },
+    { label: 'Chat Rápido', icon: MessageSquare, to: '/messages', color: 'bg-white/5 text-white' },
+    { label: 'Call', icon: Video, to: '/video-call', color: 'bg-white/5 text-white' },
+  ];
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="p-6 pt-24 pb-32 space-y-10"
     >
+      {/* Quick Actions Bar */}
+      <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
+        {quickActions.map((action) => (
+          <Link key={action.label} to={action.to} className="flex-shrink-0">
+            <button className={`px-6 py-4 rounded-2xl flex items-center gap-3 font-black uppercase tracking-widest text-[10px] transition-all active:scale-95 border border-white/5 ${action.color}`}>
+              <action.icon size={16} />
+              {action.label}
+            </button>
+          </Link>
+        ))}
+      </div>
+
       <div className="flex items-end justify-between">
         <div className="space-y-1.5">
           <h2 className="text-4xl font-serif italic font-bold text-white leading-none tracking-tight">Radar</h2>

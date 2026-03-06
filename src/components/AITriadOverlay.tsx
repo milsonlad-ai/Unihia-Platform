@@ -40,9 +40,9 @@ export const AITriadOverlay: React.FC<AITriadOverlayProps> = ({ isOpen, onClose,
 
           <div className="grid grid-cols-1 gap-5">
             {[
-              { id: 'strategic', title: 'Visão Estratégica', desc: 'Análise de cenários e predição de tendências.', color: 'from-blue-500/10' },
-              { id: 'assets', title: 'Geração de Ativos', desc: 'Produção de código e mídia de alta fidelidade.', color: 'from-unihia-accent/10' },
-              { id: 'execution', title: 'Execução Autônoma', desc: 'Delegação para agentes e fluxos inteligentes.', color: 'from-emerald-500/10' },
+              { id: 'visual', title: 'Inteligência Visual', desc: 'Análise de mídia, detecção de objetos e estilos.', color: 'from-blue-500/10' },
+              { id: 'creative', title: 'Inteligência Criativa', desc: 'Geração de ideias, nomes e estratégias de marketing.', color: 'from-unihia-accent/10' },
+              { id: 'logical', title: 'Inteligência Lógica', desc: 'Geração de código, planos técnicos e estruturas de negócio.', color: 'from-emerald-500/10' },
             ].map((item) => (
               <button 
                 key={item.id} 

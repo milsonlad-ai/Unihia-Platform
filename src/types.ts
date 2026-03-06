@@ -110,3 +110,25 @@ export interface GamificationStats {
     timestamp: string;
   }[];
 }
+
+export type AuthMethod = 'password' | 'fingerprint' | 'pattern' | 'face';
+
+export interface SecuritySettings {
+  passwordEnabled: boolean;
+  fingerprintEnabled: boolean;
+  patternEnabled: boolean;
+  faceEnabled: boolean;
+  preferredMethod: AuthMethod;
+  failedAttempts: number;
+  lastFailedAttempt?: string;
+  isLocked: boolean;
+  lockUntil?: string;
+}
+
+export interface LoginActivity {
+  id: string;
+  device: string;
+  location: string;
+  date: string;
+  status: 'success' | 'failed';
+}

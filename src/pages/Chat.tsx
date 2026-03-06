@@ -1,7 +1,8 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Users, ChevronRight, MessageSquare, Share2, Bookmark } from 'lucide-react';
+import { Users, ChevronRight, MessageSquare, Share2, Bookmark, Video } from 'lucide-react';
 import { useGamification } from '../GamificationContext';
+import { Link } from 'react-router-dom';
 
 export const Chat: React.FC = () => {
   const { awardPoints } = useGamification();
@@ -17,8 +18,13 @@ export const Chat: React.FC = () => {
           <h2 className="text-4xl font-serif italic font-bold text-white leading-none tracking-tight">Social</h2>
           <p className="text-zinc-500 text-[10px] uppercase tracking-[0.2em] font-black">Insights da Rede Unihia</p>
         </div>
-        <div className="p-2.5 bg-white/5 rounded-2xl border border-white/10">
-          <Users className="text-unihia-accent" size={18} />
+        <div className="flex gap-2">
+          <Link to="/messages" className="p-2.5 bg-white/5 rounded-2xl border border-white/10 text-zinc-500 hover:text-unihia-accent transition-colors">
+            <MessageSquare size={18} />
+          </Link>
+          <Link to="/video-call" className="p-2.5 bg-white/5 rounded-2xl border border-white/10 text-zinc-500 hover:text-unihia-accent transition-colors">
+            <Video size={18} />
+          </Link>
         </div>
       </div>
       
@@ -55,9 +61,11 @@ export const Chat: React.FC = () => {
               <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-black">Nível 4 • Estrategista</p>
             </div>
             <div className="ml-auto">
-              <button className="p-2 text-zinc-700 hover:text-unihia-accent transition-colors">
-                <ChevronRight size={18} />
-              </button>
+              <Link to={`/idea/${i}42`}>
+                <button className="p-2 text-zinc-700 hover:text-unihia-accent transition-colors">
+                  <ChevronRight size={18} />
+                </button>
+              </Link>
             </div>
           </div>
           <p className="text-zinc-300 text-sm leading-relaxed font-medium">
