@@ -10,17 +10,18 @@ import { PatternAuth } from '../components/security/PatternAuth';
 import { BiometricAuth } from '../components/security/BiometricAuth';
 import { SecuritySelection } from '../components/security/SecuritySelection';
 
-import { validatePassword } from '../utils/security';
+import { validatePassword, getDeviceFingerprint } from '../utils/security';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
-  const [step, setStep] = useState<'email' | 'auth' | 'selection'>('email');
+  const [step, setStep] = useState<'email' | 'auth' | 'selection' | 'new_device'>('email');
   const [activeMethod, setActiveMethod] = useState<AuthMethod | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(false);
+  const [showRecovery, setShowRecovery] = useState(false);
   
   const { login } = useAuth();
-  const { settings, isLocked, lockUntil, incrementFailedAttempts, resetFailedAttempts, addActivity } = useSecurity();
+  const { settings, isLocked, lockUntil, incrementFailedAttempts, resetFailedAttempts, addActivity, isNewDevice, registerDevice } = useSecurity();
   const navigate = useNavigate();
 
   const activeMethods = ([
@@ -37,28 +38,40 @@ export const Login: React.FC = () => {
     setIsSubmitting(true);
     setTimeout(() => {
       setIsSubmitting(false);
-      if (activeMethods.length === 1) {
-        setActiveMethod(activeMethods[0]);
-        setStep('auth');
-      } else if (activeMethods.length > 1) {
-        if (settings.preferredMethod && activeMethods.includes(settings.preferredMethod)) {
-          setActiveMethod(settings.preferredMethod);
-          setStep('auth');
-        } else {
-          setStep('selection');
-        }
+      const fingerprint = getDeviceFingerprint();
+      
+      if (isNewDevice(fingerprint)) {
+        setStep('new_device');
       } else {
-        // Fallback to password if none enabled (shouldn't happen with defaults)
-        setActiveMethod('password');
-        setStep('auth');
+        proceedToAuth();
       }
     }, 800);
+  };
+
+  const proceedToAuth = () => {
+    if (activeMethods.length === 1) {
+      setActiveMethod(activeMethods[0]);
+      setStep('auth');
+    } else if (activeMethods.length > 1) {
+      if (settings.preferredMethod && activeMethods.includes(settings.preferredMethod)) {
+        setActiveMethod(settings.preferredMethod);
+        setStep('auth');
+      } else {
+        setStep('selection');
+      }
+    } else {
+      setActiveMethod('password');
+      setStep('auth');
+    }
   };
 
   const handleAuthComplete = (success: boolean | string) => {
     if (success) {
       setIsSubmitting(true);
       setTimeout(() => {
+        const fingerprint = getDeviceFingerprint();
+        registerDevice(fingerprint);
+        
         addActivity({
           device: navigator.userAgent.split(') ')[0].split(' (')[1] || 'Dispositivo Desconhecido',
           location: 'Luanda, Angola (Aproximada)',
@@ -85,7 +98,7 @@ export const Login: React.FC = () => {
       case 'password':
         return <PasswordAuth onComplete={(pw) => handleAuthComplete(validatePassword(pw))} error={error} />;
       case 'pattern':
-        return <PatternAuth onComplete={(p) => handleAuthComplete(p === '0,1,2,5,8')} error={error} />;
+        return <PatternAuth onComplete={(p) => handleAuthComplete(p === (settings.storedPattern || '0,1,2,5,8'))} error={error} />;
       case 'fingerprint':
       case 'face':
         return <BiometricAuth type={activeMethod} onComplete={handleAuthComplete} error={error} />;
@@ -141,6 +154,47 @@ export const Login: React.FC = () => {
         </div>
 
         <AnimatePresence mode="wait">
+          {showRecovery && (
+            <motion.div
+              key="recovery-modal"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="fixed inset-0 z-50 bg-unihia-dark/95 flex items-center justify-center p-6"
+            >
+              <div className="glass-card p-10 space-y-8 max-w-sm w-full text-center">
+                <div className="w-16 h-16 bg-unihia-accent/10 rounded-2xl mx-auto flex items-center justify-center border border-unihia-accent/20">
+                  <Mail className="text-unihia-accent w-8 h-8" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-bold text-white tracking-tight">Recuperar Acesso</h3>
+                  <p className="text-zinc-500 text-xs font-medium leading-relaxed">
+                    Enviaremos um link de redefinição para o seu e-mail registado.
+                  </p>
+                </div>
+                <div className="space-y-4">
+                  <input 
+                    type="email" 
+                    placeholder="Seu e-mail"
+                    className="w-full bg-white/[0.02] border border-white/[0.05] rounded-xl py-4 px-5 text-white text-sm outline-none focus:border-unihia-accent transition-all"
+                  />
+                  <button 
+                    onClick={() => setShowRecovery(false)}
+                    className="w-full bg-unihia-accent text-black font-black py-4 rounded-xl uppercase tracking-widest text-[10px]"
+                  >
+                    Enviar Link
+                  </button>
+                  <button 
+                    onClick={() => setShowRecovery(false)}
+                    className="w-full py-2 text-zinc-600 hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           {step === 'email' && (
             <motion.form 
               key="email-step"
@@ -162,6 +216,16 @@ export const Login: React.FC = () => {
                 />
               </div>
 
+              <div className="flex justify-end px-2">
+                <button 
+                  type="button"
+                  onClick={() => setShowRecovery(true)}
+                  className="text-zinc-600 hover:text-unihia-accent transition-colors text-[10px] font-black uppercase tracking-widest"
+                >
+                  Esqueceu a palavra-passe?
+                </button>
+              </div>
+
               <button 
                 type="submit"
                 disabled={isSubmitting || !email}
@@ -170,6 +234,40 @@ export const Login: React.FC = () => {
                 {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Continuar'}
               </button>
             </motion.form>
+          )}
+
+          {step === 'new_device' && (
+            <motion.div
+              key="new-device-step"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="glass-card p-8 text-center space-y-6"
+            >
+              <div className="w-16 h-16 bg-unihia-accent/10 rounded-2xl mx-auto flex items-center justify-center border border-unihia-accent/20">
+                <ShieldAlert className="text-unihia-accent w-8 h-8" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold text-white tracking-tight">Novo Dispositivo</h3>
+                <p className="text-zinc-500 text-xs font-medium leading-relaxed">
+                  Detectamos um acesso de um dispositivo não reconhecido. Deseja autorizar este dispositivo?
+                </p>
+              </div>
+              <div className="flex flex-col gap-3">
+                <button 
+                  onClick={proceedToAuth}
+                  className="w-full bg-unihia-accent text-black font-black py-4 rounded-xl uppercase tracking-widest text-[10px] active:scale-95 transition-all"
+                >
+                  Sim, Autorizar
+                </button>
+                <button 
+                  onClick={() => setStep('email')}
+                  className="w-full py-4 text-zinc-600 hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest"
+                >
+                  Não, Voltar
+                </button>
+              </div>
+            </motion.div>
           )}
 
           {step === 'selection' && (

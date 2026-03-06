@@ -15,6 +15,26 @@ export interface AppSettings {
   fontFamily: 'sans' | 'serif' | 'mono';
   feedLayout: 'grid' | 'masonry' | 'list';
   aiInterventionLevel: number; // 0 to 100
+  trinityPreferences: TrinityPreferences;
+}
+
+export interface TrinityPreferences {
+  personality: 'analytical' | 'creative' | 'executive';
+  fusionMode: 'balanced' | 'gpt-focus' | 'claude-focus' | 'gemini-focus';
+  autoInsights: boolean;
+  voiceEnabled: boolean;
+}
+
+export interface TrinityMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  multimodalData?: {
+    type: 'image' | 'video' | 'code' | 'link' | 'file';
+    url?: string;
+    data?: any;
+  }[];
+  timestamp: string;
 }
 
 export interface SavedItem {
@@ -123,6 +143,22 @@ export interface SecuritySettings {
   lastFailedAttempt?: string;
   isLocked: boolean;
   lockUntil?: string;
+  registeredDevices: string[];
+  storedPattern?: string;
+  passwordHash?: string;
+  twoFactorEnabled: boolean;
+  twoFactorMethod: 'email' | 'app';
+  securityTipsEnabled: boolean;
+}
+
+export interface AuditLog {
+  id: string;
+  event: string;
+  details: string;
+  timestamp: string;
+  ip?: string;
+  device?: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
 }
 
 export interface LoginActivity {
@@ -131,4 +167,6 @@ export interface LoginActivity {
   location: string;
   date: string;
   status: 'success' | 'failed';
+  ip?: string;
+  reason?: string;
 }

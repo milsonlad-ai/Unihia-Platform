@@ -44,6 +44,7 @@ const LoadingFallback = () => (
 import { LanguageProvider } from './context/LanguageContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { SecurityProvider } from './context/SecurityContext';
+import { TrinityProvider } from './context/TrinityContext';
 
 function App() {
   return (
@@ -51,11 +52,12 @@ function App() {
       <ThemeProvider>
         <LanguageProvider>
           <SecurityProvider>
-            <NotificationProvider>
-              <GamificationProvider>
-                <AuthProvider>
-                  <Suspense fallback={<LoadingFallback />}>
-                    <Routes>
+            <TrinityProvider>
+              <NotificationProvider>
+                <GamificationProvider>
+                  <AuthProvider>
+                    <Suspense fallback={<LoadingFallback />}>
+                      <Routes>
                 {/* Public Routes */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
@@ -112,7 +114,8 @@ function App() {
           </AuthProvider>
         </GamificationProvider>
       </NotificationProvider>
-    </SecurityProvider>
+    </TrinityProvider>
+  </SecurityProvider>
   </LanguageProvider>
 </ThemeProvider>
 </ErrorBoundary>

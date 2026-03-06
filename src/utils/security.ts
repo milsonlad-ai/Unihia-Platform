@@ -2,6 +2,35 @@
  * Simple encryption utility for demo purposes.
  * In a real app, use Web Crypto API or a robust library.
  */
+/**
+ * Simulated hash function (e.g., bcrypt/argon2)
+ * In a real app, this would be done on the server.
+ */
+export const hashPassword = async (password: string): Promise<string> => {
+  // Simulate network delay and computation
+  await new Promise(resolve => setTimeout(resolve, 100));
+  return `hash_${btoa(password).split('').reverse().join('')}`;
+};
+
+export const verifyPassword = async (password: string, hash: string): Promise<boolean> => {
+  const computedHash = await hashPassword(password);
+  return computedHash === hash;
+};
+
+export const getDeviceFingerprint = (): string => {
+  const nav = window.navigator;
+  const screen = window.screen;
+  const data = [
+    nav.userAgent,
+    nav.language,
+    screen.colorDepth,
+    screen.width,
+    screen.height,
+    new Date().getTimezoneOffset()
+  ].join('|');
+  return btoa(data);
+};
+
 export const encrypt = (data: string): string => {
   return btoa(data); // Simple base64 for demo
 };

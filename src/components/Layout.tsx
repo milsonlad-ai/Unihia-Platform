@@ -25,6 +25,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { useGamification } from '../GamificationContext';
 import { AITriadOverlay } from './AITriadOverlay';
+import { TrinityAssistant } from './TrinityAssistant';
 
 const Header = ({ onMenuOpen }: { onMenuOpen: () => void }) => (
   <header className="fixed top-0 left-0 right-0 h-16 glass-header z-40 flex items-center justify-center px-6">
@@ -181,6 +182,9 @@ export const Layout: React.FC = () => {
           </motion.div>
         </AnimatePresence>
       </main>
+
+      {/* Trinity IA Assistant */}
+      <TrinityAssistant />
 
       {/* Floating AI Action Button (FAB) */}
       <div className="fixed bottom-24 right-6 z-50">

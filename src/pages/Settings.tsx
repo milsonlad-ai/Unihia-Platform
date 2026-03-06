@@ -1,22 +1,31 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Settings as SettingsIcon, Bell, Shield, User, ChevronRight, LogOut, Palette, Globe, Fingerprint, Scan, Grid3X3, Lock, ShieldCheck, History } from 'lucide-react';
+import { Settings as SettingsIcon, Bell, Shield, User, ChevronRight, LogOut, Palette, Globe, Fingerprint, Scan, Grid3X3, Lock, ShieldCheck, History, Zap, Brain, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { useSecurity } from '../context/SecurityContext';
+import { useTrinity } from '../context/TrinityContext';
 import { AuthMethod } from '../types';
+
+import { AnimatePresence } from 'motion/react';
+import { PatternAuth } from '../components/security/PatternAuth';
+import { BiometricAuth } from '../components/security/BiometricAuth';
+import { AuditPanel } from '../components/security/AuditPanel';
 
 export const Settings: React.FC = () => {
   const { logout } = useAuth();
   const { language, setLanguage } = useLanguage();
   const { accentColor, setAccentColor, theme, setTheme } = useTheme();
   const { settings, updateSettings, activities } = useSecurity();
+  const { preferences, updatePreferences } = useTrinity();
+  const [configView, setConfigView] = React.useState<AuthMethod | null>(null);
 
   const sections = [
     { title: 'Conta', icon: User, items: ['Editar Perfil', 'Alterar Senha', 'Preferências'] },
-    { title: 'Segurança Avançada', icon: Shield, items: ['Palavra-passe', 'Impressão Digital', 'Padrão de Desbloqueio', 'Reconhecimento Facial', 'Método Preferido', 'Histórico de Atividade'] },
+    { title: 'Trinity IA', icon: Zap, items: ['Personalidade', 'Modo de Fusão', 'Insights Automáticos', 'Voz Ativa'] },
+    { title: 'Segurança Avançada', icon: Shield, items: ['Palavra-passe', 'Impressão Digital', 'Padrão de Desbloqueio', 'Reconhecimento Facial', 'Método Preferido', 'Autenticação 2FA', 'Dicas de Segurança', 'Histórico de Atividade', 'Painel de Auditoria'] },
     { title: 'Notificações', icon: Bell, items: ['Push', 'E-mail', 'Atividade da Rede'] },
     { title: 'Personalização', icon: Palette, items: ['Tema', 'Cor de Destaque', 'Layout da Home'] },
     { title: 'Idioma', icon: Globe, items: ['Português', 'English', 'Español', 'Français'] },
@@ -35,11 +44,27 @@ export const Settings: React.FC = () => {
       setAccentColor(nextColor);
     }
 
+    // Trinity
+    if (item === 'Personalidade') {
+      const personalities: any[] = ['analytical', 'creative', 'executive'];
+      const next = personalities[(personalities.indexOf(preferences.personality) + 1) % personalities.length];
+      updatePreferences({ personality: next });
+    }
+    if (item === 'Modo de Fusão') {
+      const modes: any[] = ['balanced', 'gpt-focus', 'claude-focus', 'gemini-focus'];
+      const next = modes[(modes.indexOf(preferences.fusionMode) + 1) % modes.length];
+      updatePreferences({ fusionMode: next });
+    }
+    if (item === 'Insights Automáticos') updatePreferences({ autoInsights: !preferences.autoInsights });
+    if (item === 'Voz Ativa') updatePreferences({ voiceEnabled: !preferences.voiceEnabled });
+
     // Security
     if (item === 'Palavra-passe') updateSettings({ passwordEnabled: !settings.passwordEnabled });
-    if (item === 'Impressão Digital') updateSettings({ fingerprintEnabled: !settings.fingerprintEnabled });
-    if (item === 'Padrão de Desbloqueio') updateSettings({ patternEnabled: !settings.patternEnabled });
-    if (item === 'Reconhecimento Facial') updateSettings({ faceEnabled: !settings.faceEnabled });
+    if (item === 'Impressão Digital') setConfigView('fingerprint');
+    if (item === 'Padrão de Desbloqueio') setConfigView('pattern');
+    if (item === 'Reconhecimento Facial') setConfigView('face');
+    if (item === 'Autenticação 2FA') updateSettings({ twoFactorEnabled: !settings.twoFactorEnabled });
+    if (item === 'Dicas de Segurança') updateSettings({ securityTipsEnabled: !settings.securityTipsEnabled });
     
     if (item === 'Método Preferido') {
       const methods: AuthMethod[] = ['password', 'fingerprint', 'pattern', 'face'];
@@ -49,20 +74,67 @@ export const Settings: React.FC = () => {
     }
   };
 
+  const handleConfigComplete = (data: any) => {
+    if (configView === 'pattern') {
+      updateSettings({ patternEnabled: true, storedPattern: data });
+    } else if (configView === 'fingerprint') {
+      updateSettings({ fingerprintEnabled: true });
+    } else if (configView === 'face') {
+      updateSettings({ faceEnabled: true });
+    }
+    setConfigView(null);
+  };
+
   const getSecurityStatus = (item: string) => {
     if (item === 'Palavra-passe') return settings.passwordEnabled;
     if (item === 'Impressão Digital') return settings.fingerprintEnabled;
     if (item === 'Padrão de Desbloqueio') return settings.patternEnabled;
     if (item === 'Reconhecimento Facial') return settings.faceEnabled;
+    if (item === 'Autenticação 2FA') return settings.twoFactorEnabled;
+    if (item === 'Dicas de Segurança') return settings.securityTipsEnabled;
+    if (item === 'Insights Automáticos') return preferences.autoInsights;
+    if (item === 'Voz Ativa') return preferences.voiceEnabled;
     return null;
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="p-6 pt-24 pb-32 space-y-10"
-    >
+    <div className="relative min-h-screen">
+      <AnimatePresence>
+        {configView && (
+          <motion.div 
+            initial={{ opacity: 0, y: 100 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 100 }}
+            className="fixed inset-0 z-50 bg-unihia-dark p-6 flex flex-col items-center justify-center space-y-12"
+          >
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl font-bold text-white tracking-tight">Configurar Segurança</h2>
+              <p className="text-zinc-500 text-[10px] uppercase tracking-[0.2em] font-black">
+                {configView === 'pattern' ? 'Desenhe seu novo padrão' : 'Siga as instruções do dispositivo'}
+              </p>
+            </div>
+
+            {configView === 'pattern' ? (
+              <PatternAuth onComplete={handleConfigComplete} />
+            ) : (
+              <BiometricAuth type={configView as 'fingerprint' | 'face'} onComplete={handleConfigComplete} />
+            )}
+
+            <button 
+              onClick={() => setConfigView(null)}
+              className="text-zinc-600 hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest"
+            >
+              Cancelar Configuração
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="p-6 pt-24 pb-32 space-y-10"
+      >
       <div className="flex items-end justify-between">
         <div className="space-y-1.5">
           <h2 className="text-4xl font-serif italic font-bold text-white leading-none tracking-tight">Definições</h2>
@@ -89,6 +161,14 @@ export const Settings: React.FC = () => {
 
                 const securityStatus = getSecurityStatus(item);
                 
+                if (item === 'Painel de Auditoria') {
+                  return (
+                    <div key={item} className="p-5">
+                      <AuditPanel />
+                    </div>
+                  );
+                }
+
                 if (item === 'Histórico de Atividade') {
                   return (
                     <div key={item} className="p-5 space-y-4">
@@ -129,6 +209,8 @@ export const Settings: React.FC = () => {
                       {item === 'Tema' && <span className="text-[10px] text-zinc-600 uppercase font-black">({theme})</span>}
                       {item === 'Cor de Destaque' && <div className="w-3 h-3 rounded-full" style={{ backgroundColor: accentColor }} />}
                       {item === 'Método Preferido' && <span className="text-[10px] text-unihia-accent uppercase font-black">({settings.preferredMethod})</span>}
+                      {item === 'Personalidade' && <span className="text-[10px] text-unihia-accent uppercase font-black">({preferences.personality})</span>}
+                      {item === 'Modo de Fusão' && <span className="text-[10px] text-unihia-accent uppercase font-black">({preferences.fusionMode})</span>}
                     </div>
                     <div className="flex items-center gap-3">
                       {securityStatus !== null && (
@@ -157,5 +239,6 @@ export const Settings: React.FC = () => {
         </button>
       </div>
     </motion.div>
+    </div>
   );
 };
