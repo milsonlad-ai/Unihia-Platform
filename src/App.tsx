@@ -22,9 +22,12 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { InspirationFeed } from './components/InspirationFeed';
+import { GamificationProvider, useGamification } from './GamificationContext';
+import { GamificationWidget } from './components/GamificationWidget';
+import { NotificationProvider } from './context/NotificationContext';
 
 // --- Types ---
-type Tab = 'radar' | 'lab' | 'comunidade' | 'mercado' | 'inspiracao';
+type Tab = 'radar' | 'lab' | 'comunidade' | 'mercado' | 'inspiracao' | 'perfil';
 
 // --- Components ---
 
@@ -169,67 +172,90 @@ const LabScreen = () => {
   );
 };
 
-const CommunityScreen = () => (
-  <motion.div 
-    initial={{ opacity: 0, x: 20 }}
-    animate={{ opacity: 1, x: 0 }}
-    className="p-6 pt-24 pb-32 space-y-10"
-  >
-    <div className="flex items-end justify-between">
-      <div className="space-y-1.5">
-        <h2 className="text-4xl font-serif italic font-bold text-white leading-none">Social</h2>
-        <p className="text-zinc-500 text-[10px] uppercase tracking-[0.2em] font-bold">Insights da Rede Unihia</p>
+const CommunityScreen = () => {
+  const { awardPoints } = useGamification();
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      className="p-6 pt-24 pb-32 space-y-10"
+    >
+      <div className="flex items-end justify-between">
+        <div className="space-y-1.5">
+          <h2 className="text-4xl font-serif italic font-bold text-white leading-none">Social</h2>
+          <p className="text-zinc-500 text-[10px] uppercase tracking-[0.2em] font-bold">Insights da Rede Unihia</p>
+        </div>
+        <div className="p-2.5 bg-white/5 rounded-2xl border border-white/10">
+          <Users className="text-unihia-accent" size={18} />
+        </div>
       </div>
-      <div className="p-2.5 bg-white/5 rounded-2xl border border-white/10">
-        <Users className="text-unihia-accent" size={18} />
-      </div>
-    </div>
-    
-    {[1, 2].map((i) => (
-      <div key={i} className="glass-card p-6 space-y-6">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-unihia-accent to-orange-900 p-[1px]">
-            <div className="w-full h-full rounded-2xl bg-black flex items-center justify-center overflow-hidden">
-              <div className="w-full h-full bg-zinc-900 flex items-center justify-center">
-                <Users size={20} className="text-zinc-700" />
-              </div>
-            </div>
+      
+      <div className="bg-unihia-accent/5 border border-unihia-accent/20 p-6 rounded-3xl space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-unihia-accent flex items-center justify-center text-black">
+            <Users size={20} />
           </div>
           <div>
-            <p className="text-sm font-bold text-white tracking-tight">Orquestrador #{i}42</p>
-            <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-black">Nível 4 • Estrategista</p>
+            <h3 className="text-white font-bold text-sm">Formar Equipe</h3>
+            <p className="text-zinc-500 text-[10px]">Encontre parceiros para seu projeto</p>
           </div>
-          <div className="ml-auto">
-            <button className="p-2 text-zinc-700 hover:text-unihia-accent transition-colors">
-              <ChevronRight size={18} />
+          <button 
+            onClick={() => awardPoints(50, 'Formou uma equipe')}
+            className="ml-auto px-4 py-2 bg-unihia-accent text-black text-[10px] font-black uppercase rounded-xl active:scale-95 transition-all"
+          >
+            Começar
+          </button>
+        </div>
+      </div>
+      
+      {[1, 2].map((i) => (
+        <div key={i} className="glass-card p-6 space-y-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-unihia-accent to-orange-900 p-[1px]">
+              <div className="w-full h-full rounded-2xl bg-black flex items-center justify-center overflow-hidden">
+                <div className="w-full h-full bg-zinc-900 flex items-center justify-center">
+                  <Users size={20} className="text-zinc-700" />
+                </div>
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white tracking-tight">Orquestrador #{i}42</p>
+              <p className="text-[9px] text-zinc-500 uppercase tracking-widest font-black">Nível 4 • Estrategista</p>
+            </div>
+            <div className="ml-auto">
+              <button className="p-2 text-zinc-700 hover:text-unihia-accent transition-colors">
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          </div>
+          <p className="text-zinc-300 text-sm leading-relaxed font-medium">
+            Acabei de implementar o novo fluxo do Laboratório para análise de mercado imobiliário em Luanda. Os resultados são impressionantes. Alguém mais testando?
+          </p>
+          <div className="flex items-center gap-8 pt-5 border-t border-white/[0.04]">
+            <button className="flex items-center gap-2 text-zinc-500 hover:text-unihia-accent transition-all group">
+              <MessageSquare size={16} className="group-hover:scale-110 transition-transform" /> 
+              <span className="text-[10px] font-black">12</span>
+            </button>
+            <button className="flex items-center gap-2 text-zinc-500 hover:text-unihia-accent transition-all group">
+              <Share2 size={16} className="group-hover:scale-110 transition-transform" /> 
+              <span className="text-[10px] font-black uppercase tracking-widest">Partilhar</span>
+            </button>
+            <button className="ml-auto text-zinc-500 hover:text-unihia-accent transition-all group">
+              <Bookmark size={16} className="group-hover:scale-110 transition-transform" />
             </button>
           </div>
         </div>
-        <p className="text-zinc-300 text-sm leading-relaxed font-medium">
-          Acabei de implementar o novo fluxo do Laboratório para análise de mercado imobiliário em Luanda. Os resultados são impressionantes. Alguém mais testando?
-        </p>
-        <div className="flex items-center gap-8 pt-5 border-t border-white/[0.04]">
-          <button className="flex items-center gap-2 text-zinc-500 hover:text-unihia-accent transition-all group">
-            <MessageSquare size={16} className="group-hover:scale-110 transition-transform" /> 
-            <span className="text-[10px] font-black">12</span>
-          </button>
-          <button className="flex items-center gap-2 text-zinc-500 hover:text-unihia-accent transition-all group">
-            <Share2 size={16} className="group-hover:scale-110 transition-transform" /> 
-            <span className="text-[10px] font-black uppercase tracking-widest">Partilhar</span>
-          </button>
-          <button className="ml-auto text-zinc-500 hover:text-unihia-accent transition-all group">
-            <Bookmark size={16} className="group-hover:scale-110 transition-transform" />
-          </button>
-        </div>
-      </div>
-    ))}
-  </motion.div>
-);
+      ))}
+    </motion.div>
+  );
+};
 
 const MarketScreen = () => {
   const [idea, setIdea] = useState('');
   const [analysis, setAnalysis] = useState<any>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const { awardPoints, unlockBadge } = useGamification();
 
   const trends = [
     { title: "IA Generativa em Logística", growth: "+145%", sentiment: "Alto" },
@@ -256,6 +282,8 @@ const MarketScreen = () => {
       
       const result = JSON.parse(response.text || '{}');
       setAnalysis(result);
+      awardPoints(30, 'Validou uma nova ideia');
+      unlockBadge('first_idea');
     } catch (error) {
       console.error("Erro na análise:", error);
     } finally {
@@ -276,6 +304,27 @@ const MarketScreen = () => {
         </div>
         <div className="p-2.5 bg-white/5 rounded-2xl border border-white/10">
           <ShoppingBag className="text-unihia-accent" size={18} />
+        </div>
+      </div>
+
+      <div className="bg-emerald-500/10 border border-emerald-500/20 p-6 rounded-3xl space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-black">
+            <TrendingUp size={20} />
+          </div>
+          <div>
+            <h3 className="text-white font-bold text-sm">Receber Investimento</h3>
+            <p className="text-zinc-500 text-[10px]">Simular rodada de captação</p>
+          </div>
+          <button 
+            onClick={() => {
+              awardPoints(200, 'Recebeu investimento anjo');
+              unlockBadge('first_investment');
+            }}
+            className="ml-auto px-4 py-2 bg-emerald-500 text-black text-[10px] font-black uppercase rounded-xl active:scale-95 transition-all"
+          >
+            Captar
+          </button>
         </div>
       </div>
 
@@ -475,12 +524,71 @@ const AITriadOverlay = ({ isOpen, onClose, onAction, isProcessing }: { isOpen: b
   </AnimatePresence>
 );
 
+const ProfileScreen = () => {
+  const { awardPoints, unlockBadge } = useGamification();
+  
+  return (
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="p-6 pt-24 pb-32 space-y-8"
+    >
+      <div className="text-center space-y-4 mb-8">
+        <div className="w-24 h-24 rounded-[2rem] bg-gradient-to-br from-unihia-accent to-orange-600 mx-auto p-1">
+          <div className="w-full h-full rounded-[1.8rem] bg-black flex items-center justify-center overflow-hidden">
+            <Users size={40} className="text-unihia-accent" />
+          </div>
+        </div>
+        <div>
+          <h2 className="text-3xl font-bold text-white tracking-tight">Milson Lad</h2>
+          <p className="text-zinc-500 text-xs uppercase tracking-widest font-black">Estrategista de Produto</p>
+        </div>
+      </div>
+
+      <GamificationWidget />
+
+      <div className="bg-white/[0.02] border border-white/[0.05] rounded-3xl p-6 space-y-4">
+        <h3 className="text-[10px] uppercase tracking-widest text-zinc-500 font-black">Simulador de Conquistas</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <button 
+            onClick={() => awardPoints(10, 'Ação de teste')}
+            className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-[10px] font-bold text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+          >
+            Testar +10 XP
+          </button>
+          <button 
+            onClick={() => unlockBadge('first_idea')}
+            className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-[10px] font-bold text-indigo-400 hover:bg-indigo-500/20 transition-colors"
+          >
+            Testar Distintivo
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-white/[0.02] border border-white/[0.05] rounded-3xl p-6 space-y-4">
+        <h3 className="text-[10px] uppercase tracking-widest text-zinc-500 font-black">Configurações da Conta</h3>
+        <div className="space-y-2">
+          <button className="w-full p-4 bg-white/[0.03] rounded-2xl text-left text-sm font-medium hover:bg-white/[0.05] transition-colors flex items-center justify-between">
+            <span>Privacidade e Segurança</span>
+            <ChevronRight size={16} className="text-zinc-700" />
+          </button>
+          <button className="w-full p-4 bg-white/[0.03] rounded-2xl text-left text-sm font-medium hover:bg-white/[0.05] transition-colors flex items-center justify-between">
+            <span>Notificações</span>
+            <ChevronRight size={16} className="text-zinc-700" />
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
 // --- Main App ---
 
-function App() {
+function AppContent() {
   const [activeTab, setActiveTab] = useState<Tab>('radar');
   const [isTriadOpen, setIsTriadOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const { awardPoints, unlockBadge } = useGamification();
 
   const handleAIAction = () => {
     setIsProcessing(true);
@@ -488,6 +596,8 @@ function App() {
     // Simulate processing
     setTimeout(() => {
       setIsProcessing(false);
+      awardPoints(100, 'Executou orquestração de IA');
+      unlockBadge('ai_collaborator');
     }, 3000);
   };
 
@@ -498,6 +608,7 @@ function App() {
       case 'comunidade': return <CommunityScreen />;
       case 'mercado': return <MarketScreen />;
       case 'inspiracao': return <InspirationFeed />;
+      case 'perfil': return <ProfileScreen />;
       default: return <RadarScreen />;
     }
   };
@@ -567,11 +678,11 @@ function App() {
           </button>
 
           <button 
-            onClick={() => setActiveTab('mercado')}
-            className={`flex flex-col items-center gap-1.5 transition-all duration-500 ${activeTab === 'mercado' ? 'text-unihia-accent' : 'text-zinc-600'}`}
+            onClick={() => setActiveTab('perfil')}
+            className={`flex flex-col items-center gap-1.5 transition-all duration-500 ${activeTab === 'perfil' ? 'text-unihia-accent' : 'text-zinc-600'}`}
           >
-            <ShoppingBag size={20} className={activeTab === 'mercado' ? 'accent-glow' : ''} />
-            <span className="text-[8px] font-black uppercase tracking-[0.2em]">Mercado</span>
+            <Users size={20} className={activeTab === 'perfil' ? 'accent-glow' : ''} />
+            <span className="text-[8px] font-black uppercase tracking-[0.2em]">Perfil</span>
           </button>
         </div>
       </nav>
@@ -584,6 +695,16 @@ function App() {
         isProcessing={isProcessing}
       />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <NotificationProvider>
+      <GamificationProvider>
+        <AppContent />
+      </GamificationProvider>
+    </NotificationProvider>
   );
 }
 

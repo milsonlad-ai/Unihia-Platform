@@ -89,3 +89,24 @@ export interface UserBehavior {
   visitedCategories: InspirationCategory[];
   createdProjectIds: string[];
 }
+
+export interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  unlockedAt?: string;
+}
+
+export interface GamificationStats {
+  points: number;
+  level: number;
+  badges: Badge[];
+  nextLevelThreshold: number;
+  recentActions: {
+    id: string;
+    action: string;
+    points: number;
+    timestamp: string;
+  }[];
+}

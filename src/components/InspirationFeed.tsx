@@ -15,6 +15,7 @@ import { InspirationItem, InspirationCategory, UserBehavior } from '../types';
 import { InspirationCard } from './InspirationCard';
 import { GoogleGenAI } from "@google/genai";
 import { Toast, ToastType } from './Toast';
+import { useGamification } from '../GamificationContext';
 
 const CATEGORIES: InspirationCategory[] = [
   'tecnologia', 'inteligência artificial', 'design', 'startups', 'inovação', 'educação', 'marketing', 'engenharia', 'empreendedorismo'
@@ -94,6 +95,7 @@ export const InspirationFeed: React.FC = () => {
     type: 'info',
     isVisible: false
   });
+  const { awardPoints, unlockBadge } = useGamification();
 
   const loaderRef = useRef<HTMLDivElement>(null);
 
@@ -141,6 +143,9 @@ export const InspirationFeed: React.FC = () => {
         ? prev.likedIds.filter(i => i !== id) 
         : [...prev.likedIds, id]
     }));
+    if (!isLiked) {
+      awardPoints(5, 'Curtiu uma inspiração');
+    }
     showToast(isLiked ? 'Inspiração removida dos curtidos' : 'Inspiração curtida!', 'success');
   };
 
@@ -151,6 +156,9 @@ export const InspirationFeed: React.FC = () => {
         ? prev.savedIds.filter(i => i !== id) 
         : [...prev.savedIds, id]
     }));
+    if (!isSaved) {
+      awardPoints(10, 'Salvou uma inspiração');
+    }
     showToast(isSaved ? 'Inspiração removida da biblioteca' : 'Inspiração salva na biblioteca!', 'success');
   };
 
@@ -193,6 +201,7 @@ export const InspirationFeed: React.FC = () => {
       });
       
       setAiAnalysis({ item, analysis: response.text || 'Não foi possível gerar a análise.' });
+      awardPoints(50, mode === 'execute' ? 'Orquestrou roadmap executável' : 'Expandiu visão com Trinity AI');
     } catch (error) {
       console.error("Erro na expansão IA:", error);
     } finally {
@@ -371,6 +380,8 @@ export const InspirationFeed: React.FC = () => {
                   <button 
                     onClick={() => {
                       showToast('Projeto criado com sucesso no Laboratório!', 'success');
+                      awardPoints(150, 'Criou um novo projeto');
+                      unlockBadge('project_completed');
                       setAiAnalysis(null);
                     }}
                     className="bg-unihia-accent text-black font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest active:scale-95 transition-all"
@@ -380,6 +391,7 @@ export const InspirationFeed: React.FC = () => {
                   <button 
                     onClick={() => {
                       showToast('Ideia salva na sua biblioteca privada.', 'success');
+                      awardPoints(20, 'Arquivou uma ideia na Lab');
                       setAiAnalysis(null);
                     }}
                     className="bg-white/5 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest border border-white/10 active:scale-95 transition-all"
@@ -389,6 +401,8 @@ export const InspirationFeed: React.FC = () => {
                   <button 
                     onClick={() => {
                       showToast('Pitch enviado para a rede de investidores Unihia.', 'success');
+                      awardPoints(300, 'Enviou pitch para investidores');
+                      unlockBadge('first_investment');
                       setAiAnalysis(null);
                     }}
                     className="col-span-2 bg-emerald-500/10 text-emerald-500 font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest border border-emerald-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
@@ -398,6 +412,8 @@ export const InspirationFeed: React.FC = () => {
                   <button 
                     onClick={() => {
                       showToast('Iniciando processo de incubação para Startup.', 'info');
+                      awardPoints(500, 'Transformou ideia em Startup');
+                      unlockBadge('team_founder');
                       setAiAnalysis(null);
                     }}
                     className="col-span-2 bg-blue-500/10 text-blue-500 font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest border border-blue-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
