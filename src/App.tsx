@@ -8,6 +8,7 @@ import { Layout } from './components/Layout';
 import { ErrorBoundary } from 'react-error-boundary';
 import { ErrorFallback } from './components/ErrorFallback';
 import { Loader2 } from 'lucide-react';
+import { Analytics } from '@vercel/analytics/react';
 
 // Lazy loaded pages
 const Login = lazy(() => import('./pages/Login').then(m => ({ default: m.Login })));
@@ -118,6 +119,7 @@ function App() {
   </SecurityProvider>
   </LanguageProvider>
 </ThemeProvider>
+<Analytics />
 </ErrorBoundary>
   );
 }
