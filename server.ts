@@ -21,10 +21,10 @@ db.exec(`
     id TEXT PRIMARY KEY,
     title TEXT,
     description TEXT,
-    type TEXT, -- 'idea', 'startup', 'prototype'
-    status TEXT, -- 'draft', 'active', 'funded', 'sold'
+    type TEXT,
+    status TEXT,
     owner_id TEXT,
-    metrics TEXT, -- JSON string for ROI, impact, etc.
+    metrics TEXT,
     image_url TEXT,
     FOREIGN KEY(owner_id) REFERENCES users(id)
   );
@@ -32,7 +32,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS opportunities (
     id TEXT PRIMARY KEY,
     user_id TEXT,
-    type TEXT, -- 'investor', 'team', 'market', 'project'
+    type TEXT,
     content TEXT,
     status TEXT DEFAULT 'pending',
     FOREIGN KEY(user_id) REFERENCES users(id)
@@ -74,7 +74,7 @@ async function startServer() {
   });
 
   app.get("/api/opportunities/:userId", (req, res) => {
-    const opps = db.prepare("SELECT * FROM opportunities WHERE user_id = ?").all();
+    const opps = db.prepare("SELECT * FROM opportunities WHERE user_id = ?").all(req.params.userId);
     res.json(opps);
   });
 
