@@ -9,6 +9,10 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { ErrorFallback } from './components/ErrorFallback';
 import { Loader2 } from 'lucide-react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
+import { LanguageProvider } from './context/LanguageContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { SecurityProvider } from './context/SecurityContext';
+import { TrinityProvider } from './context/TrinityContext';
 
 // Lazy loaded pages
 const Login = lazy(() => import('./pages/Login').then(m => ({ default: m.Login })));
@@ -42,11 +46,6 @@ const LoadingFallback = () => (
   </div>
 );
 
-import { LanguageProvider } from './context/LanguageContext';
-import { ThemeProvider } from './context/ThemeContext';
-import { SecurityProvider } from './context/SecurityContext';
-import { TrinityProvider } from './context/TrinityContext';
-
 function App() {
   return (
     <ErrorBoundary FallbackComponent={ErrorFallback}>
@@ -59,68 +58,68 @@ function App() {
                   <AuthProvider>
                     <Suspense fallback={<LoadingFallback />}>
                       <Routes>
-                {/* Public Routes */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                
-                {/* Onboarding Route (Requires Auth but not Onboarding) */}
-                <Route 
-                  path="/onboarding" 
-                  element={
-                    <ProtectedRoute requireOnboarding={false}>
-                      <Onboarding />
-                    </ProtectedRoute>
-                  } 
-                />
+                        {/* Public Routes */}
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/register" element={<Register />} />
+                        
+                        {/* Onboarding Route (Requires Auth but not Onboarding) */}
+                        <Route 
+                          path="/onboarding" 
+                          element={
+                            <ProtectedRoute requireOnboarding={false}>
+                              <Onboarding />
+                            </ProtectedRoute>
+                          } 
+                        />
 
-                {/* Protected Routes with Layout */}
-                <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-                  <Route path="/home" element={<Home />} />
-                  <Route path="/inspiration" element={<Inspiration />} />
-                  <Route path="/explore" element={<Explore />} />
-                  <Route path="/projects" element={<Projects />} />
-                  <Route path="/marketplace" element={<Marketplace />} />
-                  <Route path="/investors" element={<Investors />} />
-                  <Route path="/chat" element={<Chat />} />
-                  <Route path="/messages" element={<Messages />} />
-                  <Route path="/messages/:id" element={<Messages />} />
-                  <Route path="/video-call" element={<VideoCall />} />
-                  <Route path="/ai-feed" element={<AIFeed />} />
-                  <Route path="/create-idea" element={<CreateIdea />} />
-                  <Route path="/tools" element={<Tools />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/profile/:username" element={<Profile />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/saved" element={<Saved />} />
-                  <Route path="/notifications" element={<Notifications />} />
-                  
-                  {/* Dynamic Routes */}
-                  <Route path="/project/:id" element={<ProjectDetails />} />
-                  <Route path="/idea/:id" element={<IdeaDetails />} />
-                  
-                  {/* AI Specific Routes */}
-                  <Route path="/ai/create-idea" element={<CreateIdea />} />
-                  <Route path="/ai/build-startup" element={<AIFeed />} />
-                  <Route path="/ai/generate-code" element={<AIFeed />} />
-                  <Route path="/ai/analyze-market" element={<AIFeed />} />
-                  
-                  {/* Fallback for authenticated users */}
-                  <Route path="/" element={<Navigate to="/home" replace />} />
-                </Route>
+                        {/* Protected Routes with Layout */}
+                        <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                          <Route path="/home" element={<Home />} />
+                          <Route path="/inspiration" element={<Inspiration />} />
+                          <Route path="/explore" element={<Explore />} />
+                          <Route path="/projects" element={<Projects />} />
+                          <Route path="/marketplace" element={<Marketplace />} />
+                          <Route path="/investors" element={<Investors />} />
+                          <Route path="/chat" element={<Chat />} />
+                          <Route path="/messages" element={<Messages />} />
+                          <Route path="/messages/:id" element={<Messages />} />
+                          <Route path="/video-call" element={<VideoCall />} />
+                          <Route path="/ai-feed" element={<AIFeed />} />
+                          <Route path="/create-idea" element={<CreateIdea />} />
+                          <Route path="/tools" element={<Tools />} />
+                          <Route path="/profile" element={<Profile />} />
+                          <Route path="/profile/:username" element={<Profile />} />
+                          <Route path="/settings" element={<Settings />} />
+                          <Route path="/saved" element={<Saved />} />
+                          <Route path="/notifications" element={<Notifications />} />
+                          
+                          {/* Dynamic Routes */}
+                          <Route path="/project/:id" element={<ProjectDetails />} />
+                          <Route path="/idea/:id" element={<IdeaDetails />} />
+                          
+                          {/* AI Specific Routes */}
+                          <Route path="/ai/create-idea" element={<CreateIdea />} />
+                          <Route path="/ai/build-startup" element={<AIFeed />} />
+                          <Route path="/ai/generate-code" element={<AIFeed />} />
+                          <Route path="/ai/analyze-market" element={<AIFeed />} />
+                          
+                          {/* Fallback for authenticated users */}
+                          <Route path="/" element={<Navigate to="/home" replace />} />
+                        </Route>
 
-                {/* Global Fallback */}
-                <Route path="*" element={<Navigate to="/home" replace />} />
-              </Routes>
-            </Suspense>
-          </AuthProvider>
-        </GamificationProvider>
-      </NotificationProvider>
-    </TrinityProvider>
-  </SecurityProvider>
-  </LanguageProvider>
-</ThemeProvider>
-<SpeedInsights />
-</ErrorBoundary>
+                        {/* Global Fallback */}
+                        <Route path="*" element={<Navigate to="/home" replace />} />
+                      </Routes>
+                    </Suspense>
+                    <SpeedInsights />
+                  </AuthProvider>
+                </GamificationProvider>
+              </NotificationProvider>
+            </TrinityProvider>
+          </SecurityProvider>
+        </LanguageProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 
