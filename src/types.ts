@@ -6,6 +6,7 @@ export interface User {
   skills: string[];
   reputation: number;
   avatar: string;
+  isOnboarded?: boolean;
 }
 
 export interface AppSettings {
