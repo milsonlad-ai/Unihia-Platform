@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+@theme {
+  --color-u-dark: #0a0a0a;
+  --color-u-card: #111111;
+  --color-u-border: #1f1f1f;
+  --color-u-accent: #f97316; /* O seu Laranja original */
+  --color-u-text: #e5e5e5;
+  --color-u-muted: #525252;
+}
+
+@layer base {
+  * { border-color: var(--color-u-border); }
+  body {
+    background-color: var(--color-u-dark);
+    color: var(--color-u-text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+}
+
+::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
