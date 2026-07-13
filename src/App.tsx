@@ -1,18 +1,54 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { Layout } from './components/Layout';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { Home } from './pages/Home';
+import { Inspiration } from './pages/Inspiration';
+import { AIFeed } from './pages/AIFeed';
+import { Market } from './pages/Market';
+import { Profile } from './pages/Profile';
+import { Login } from './pages/Login';
+import { Register } from './pages/Register';
 
-const Home = () => <div style={{padding:20, color:'#f97316'}}><h1>UNIHIA HOME</h1><p>Sistema Operacional.</p></div>;
-const Login = () => <div style={{padding:20, color:'#f97316'}}><h1>TELA DE LOGIN</h1><p>Por favor, use o computador ou limpe o cache.</p></div>;
+const Protected = ({ children }: { children: JSX.Element }) => {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-u-dark text-u-muted">
+        A carregar…
+      </div>
+    );
+  }
+  if (!user) return <Navigate to="/login" replace />;
+  return children;
+};
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route
+              path="/"
+              element={
+                <Protected>
+                  <Layout />
+                </Protected>
+              }
+            >
+              <Route index element={<Home />} />
+              <Route path="inspiration" element={<Inspiration />} />
+              <Route path="ai" element={<AIFeed />} />
+              <Route path="market" element={<Market />} />
+              <Route path="profile" element={<Profile />} />
+            </Route>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
